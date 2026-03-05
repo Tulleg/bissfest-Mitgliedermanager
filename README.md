@@ -173,7 +173,6 @@ Die `config.json` definiert das komplette Verhalten:
 ## 📚 Dokumentation
 
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** – Detaillierte Deployment-Anleitung
-- **[status.md](status.md)** – Aktueller Projektstatus
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** – Richtlinien für Entwickler
 
 ---
