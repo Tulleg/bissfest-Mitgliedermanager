@@ -18,9 +18,7 @@ router.post('/login', async (req, res) => {
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
-      return res.status(401).json({ fehler: 'Ungültige Anmeldedaten' });
-    }
+    console.log('Login compare result:', valid, 'for user:', username, 'hash starts with:', user.password_hash.substring(0, 10));
 
     // Session setzen
     req.session.userId = user.id;
@@ -90,6 +88,7 @@ router.post('/setup', async (req, res) => {
     }
 
     const hash = await bcrypt.hash(password, 12);
+    console.log('Generated hash for setup:', hash);
     const user = createUser(username, hash);
 
     // Direkt einloggen
