@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  angelverein:
+    build: .
+    container_name: angelverein-app
+    restart: unless-stopped
+    ports:
+      - "3500:3500"
+    volumes:
+      # Datenbank und Session-Secret persistent speichern
+      - angelverein-data:/app/data
+      # Uploads persistent speichern
+      - angelverein-uploads:/app/uploads
+      # Config von außen überschreibbar (optional)
+      # - ./config.json:/app/config.json:ro
+    environment:
+      - NODE_ENV=production
+      - TRUST_PROXY=true
+      # Optional: Festes Session-Secret (empfohlen für Production)
+      # - SESSION_SECRET=hier-ein-langes-zufaelliges-secret-eintragen
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3500/api/config"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  angelverein-data:
+    driver: local
+  angelverein-uploads:
+    driver: local
