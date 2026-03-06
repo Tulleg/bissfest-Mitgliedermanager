@@ -53,7 +53,7 @@ router.delete('/vorlagen/:id', requireRole('admin'), (req, res) => {
 });
 
 // POST /api/export/pdf - PDF generieren
-router.post('/pdf', requireRole('admin'), (req, res) => {
+router.post('/pdf', requireRole('admin'), async (req, res) => {
   try {
     const { vorlagenId, customConfig } = req.body;
     
@@ -72,6 +72,11 @@ router.post('/pdf', requireRole('admin'), (req, res) => {
       return res.status(400).json({ fehler: 'Keine Vorlage oder Konfiguration angegeben' });
     }
 
+    // Sicherstellen, dass Felder vorhanden sind
+    if (!exportConfig.felder || !Array.isArray(exportConfig.felder) || exportConfig.felder.length === 0) {
+      return res.status(400).json({ fehler: 'Export-Konfiguration muss mindestens ein Feld enthalten' });
+    }
+
     // Mitglieder mit Filter abrufen
     const members = db.getAllMembers(exportConfig.filter || {});
     const count = db.countMembers(exportConfig.filter || {});
@@ -82,8 +87,8 @@ router.post('/pdf', requireRole('admin'), (req, res) => {
       spaltenMap[col.key] = col.label;
     }
 
-    // PDF generieren
-    const pdfBuffer = pdfGenerator.generatePDF({
+    // PDF generieren (Promise zurückgeben und abwarten)
+    const pdfBuffer = await pdfGenerator.generatePDF({
       vereinsname: config.vereinsname,
       ueberschrift: exportConfig.ueberschrift || 'Mitgliederliste',
       felder: exportConfig.felder,
@@ -95,12 +100,16 @@ router.post('/pdf', requireRole('admin'), (req, res) => {
       filter: exportConfig.filter
     });
 
+    if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.length === 0) {
+      console.warn('PDF-Generator lieferte leeres Ergebnis');
+    }
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${exportConfig.name || 'export'}.pdf"`);
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Fehler beim PDF-Export:', error);
-    res.status(500).json({ fehler: 'Fehler beim PDF-Export: ' + error.message });
+    res.status(500).json({ fehler: 'Fehler beim PDF-Export: ' + (error.message || error) });
   }
 });
 

@@ -16,6 +16,15 @@ function generatePDF(options) {
     filter
   } = options;
 
+  if (!felder || !Array.isArray(felder) || felder.length === 0) {
+    throw new Error('Felder-Liste darf nicht leer sein');
+  }
+
+  // normalisiere Feldnamen (schon vorhandene keys können punkt oder großbuchstaben enthalten)
+  const normalize = key => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const normalizedMap = {};
+  felder.forEach(k => { normalizedMap[normalize(k)] = k; });
+
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -28,51 +37,47 @@ function generatePDF(options) {
       doc.on('data', (chunk) => buffers.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-      // === KOPFBEREICH ===
-      
-      // Vereinsname
-      doc.fontSize(10).fillColor('#666666')
-        .text(vereinsname, { align: 'center' });
-      
-      doc.moveDown(0.5);
+      // === COVERSEITE ===
+      // Vereinsname groß
+      doc.fontSize(24).fillColor('#000000').text(vereinsname, { align: 'center' });
+      doc.moveDown(1.5);
 
-      // Überschrift
-      doc.fontSize(18).fillColor('#000000')
-        .text(ueberschrift, { align: 'center' });
+      // Titel / Überschrift
+      doc.fontSize(20).fillColor('#000000').text(ueberschrift, { align: 'center' });
+      doc.moveDown(0.7);
 
-      doc.moveDown(0.3);
-
-      // Datum
-      if (zeigeDatum) {
-        const datum = new Date().toLocaleDateString('de-DE', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-        doc.fontSize(10).fillColor('#666666')
-          .text(`Erstellt am: ${datum}`, { align: 'center' });
+      // Datum + Anzahl
+      if (zeigeDatum || zeigeAnzahl) {
+        const parts = [];
+        if (zeigeDatum) {
+          const datum = new Date().toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+          parts.push(`Stand: ${datum}`);
+        }
+        if (zeigeAnzahl) {
+          parts.push(`Mitglieder: ${anzahl}`);
+        }
+        doc.fontSize(12).fillColor('#333333').text(parts.join(' | '), { align: 'center' });
+        doc.moveDown(0.7);
       }
 
-      // Filter-Info
+      // Filter-Info auf Cover
       if (filter && Object.keys(filter).length > 0) {
         const filterTexte = Object.entries(filter)
           .filter(([k, v]) => v)
           .map(([key, value]) => `${spaltenLabels[key] || key}: ${value}`);
-        
         if (filterTexte.length > 0) {
-          doc.fontSize(9).fillColor('#888888')
+          doc.fontSize(10).fillColor('#888888')
             .text(`Filter: ${filterTexte.join(', ')}`, { align: 'center' });
+          doc.moveDown(0.5);
         }
       }
 
-      // Anzahl
-      if (zeigeAnzahl) {
-        doc.fontSize(10).fillColor('#333333')
-          .text(`Anzahl Mitglieder: ${anzahl}`, { align: 'center' });
-      }
-
-      doc.moveDown(1);
-
+      // Neue Seite für Tabelle
+      doc.addPage();
       // === TABELLE ===
       
       const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
@@ -136,8 +141,17 @@ function generatePDF(options) {
         // Zelleninhalte
         doc.fontSize(8);
         for (let i = 0; i < felder.length; i++) {
+          // try to find value by field name, normalizing both sides
           let value = member[felder[i]];
-          
+          if (value === undefined) {
+            const norm = normalize(felder[i]);
+            for (const mk of Object.keys(member)) {
+              if (normalize(mk) === norm) {
+                value = member[mk];
+                break;
+              }
+            }
+          }
           // Boolean-Werte formatieren
           if (value === 1 || value === true) value = 'Ja';
           if (value === 0 || value === false) value = 'Nein';

@@ -13,7 +13,7 @@ Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltun
 
 - **👥 Mitgliederverwaltung** – Flexible Spalten, konfigurierbar via JSON
 - **📥 Import** – PDF (mit OCR) und Excel-Dateien importieren
-- **📤 Export** – Anpassbare PDF-Templates für Berichte und Meldungen
+- **📤 Export** – Anpassbare PDF-Templates mit Deckblatt, Filterinfo und automatischer Schlüssel-Normalisierung
 - **🔐 Authentifizierung** – Sichere Anmeldung mit bcrypt-Hashing
 - **🌐 Web-Interface** – Modernes UI mit React & Tailwind CSS
 - **🐳 Docker-ready** – Produktionsbereit mit Docker Compose
@@ -28,7 +28,7 @@ Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltun
 | **Frontend** | React 18 + Vite + Tailwind CSS |
 | **Backend** | Node.js + Express 4 |
 | **Datenbank** | SQLite (better-sqlite3) |
-| **PDF** | PDFKit (Export), pdf-parse (Import) |
+| **PDF** | PDFKit (Export – now with cover page & field normalisation), pdf-parse (Import) |
 | **Excel** | xlsx (SheetJS) |
 | **Deployment** | Docker + Docker Compose |
 

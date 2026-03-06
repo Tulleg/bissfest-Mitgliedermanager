@@ -258,6 +258,23 @@ function deleteExportVorlage(id) {
   return db.prepare('DELETE FROM export_vorlagen WHERE id = ?').run(id);
 }
 
+// --- test helpers -----------------------------------------------------------
+
+function deleteAllMembers() {
+  return db.prepare('DELETE FROM mitglieder').run();
+}
+
+function deleteAllExportVorlagen() {
+  return db.prepare('DELETE FROM export_vorlagen').run();
+}
+
+/**
+ * Führt beliebiges SQL aus (nur für Tests/Interna)
+ */
+function runRaw(sql, params = []) {
+  return db.prepare(sql).run(...params);
+}
+
 /**
  * Anzahl Mitglieder mit Filter
  */
@@ -290,6 +307,9 @@ module.exports = {
   deleteMember,
   searchMembers,
   getExportVorlagen,
+  deleteAllMembers,
+  deleteAllExportVorlagen,
+  runRaw,
   createExportVorlage,
   updateExportVorlage,
   deleteExportVorlage,
