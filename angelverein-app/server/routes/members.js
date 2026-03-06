@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
+const { requireRole } = require('../middleware/roleCheck');
 
 // GET /api/mitglieder - Alle Mitglieder abrufen
-router.get('/', (req, res) => {
+router.get('/', requireRole('viewer'), (req, res) => {
   try {
     const filter = {};
     // Filter aus Query-Parametern extrahieren
@@ -28,7 +29,7 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/mitglieder/anzahl - Anzahl Mitglieder mit Filter
-router.get('/anzahl', (req, res) => {
+router.get('/anzahl', requireRole('viewer'), (req, res) => {
   try {
     const filter = { ...req.query };
     const count = db.countMembers(filter);
@@ -40,7 +41,7 @@ router.get('/anzahl', (req, res) => {
 });
 
 // GET /api/mitglieder/:id - Ein Mitglied abrufen
-router.get('/:id', (req, res) => {
+router.get('/:id', requireRole('viewer'), (req, res) => {
   try {
     const member = db.getMemberById(req.params.id);
     if (!member) {
@@ -54,7 +55,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST /api/mitglieder - Neues Mitglied anlegen
-router.post('/', (req, res) => {
+router.post('/', requireRole('editor'), (req, res) => {
   try {
     const member = db.createMember(req.body);
     res.status(201).json(member);
@@ -65,7 +66,7 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/mitglieder/:id - Mitglied aktualisieren
-router.put('/:id', (req, res) => {
+router.put('/:id', requireRole('editor'), (req, res) => {
   try {
     const existing = db.getMemberById(req.params.id);
     if (!existing) {
@@ -80,7 +81,7 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /api/mitglieder/:id - Mitglied löschen
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireRole('editor'), (req, res) => {
   try {
     const existing = db.getMemberById(req.params.id);
     if (!existing) {

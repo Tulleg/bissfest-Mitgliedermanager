@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function MemberTable({ members, spalten, loading, onEdit, onDelete }) {
+function MemberTable({ members, spalten, loading, onEdit, onDelete, canEdit = true, canDelete = true }) {
   const [sortField, setSortField] = useState('nachname')
   const [sortDir, setSortDir] = useState('asc')
 
@@ -83,20 +83,24 @@ function MemberTable({ members, spalten, loading, onEdit, onDelete }) {
                 ))}
                 <td className="px-4 py-2.5 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => onEdit(member)}
-                      className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                      title="Bearbeiten"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => onDelete(member.id)}
-                      className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors"
-                      title="Löschen"
-                    >
-                      🗑️
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => onEdit(member)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                        title="Bearbeiten"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => onDelete(member.id)}
+                        className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors"
+                        title="Löschen"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -88,6 +88,11 @@ app.use('/api/mitglieder', membersRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/import', importRouter);
 
+// Block access to /data/* paths
+app.get('/data/*', (req, res) => {
+  res.status(404).send('Not found');
+});
+
 // SPA Fallback - alle nicht-API Routen zum Frontend weiterleiten
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {

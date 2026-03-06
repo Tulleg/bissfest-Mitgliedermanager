@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const { requireRole } = require('../middleware/roleCheck');
 const path = require('path');
 const fs = require('fs');
 const db = require('../database');
@@ -113,7 +114,7 @@ router.post('/upload', upload.single('datei'), async (req, res) => {
 });
 
 // POST /api/import/abgleich - Importierte Daten mit Mitgliederliste abgleichen
-router.post('/abgleich', (req, res) => {
+router.post('/abgleich', requireRole('admin'), (req, res) => {
   try {
     const { daten, mapping, abgleichFeld } = req.body;
     

@@ -178,6 +178,13 @@ function LoginPage({ vereinsname, onLogin }) {
           </form>
 
           {/* Footer */}
+          {!isSetup && (
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-500">
+                Passwort vergessen? Bitte Admin kontaktieren.
+              </p>
+            </div>
+          )}
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-400">
               🔒 Geschützte Verbindung

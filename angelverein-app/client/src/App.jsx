@@ -4,6 +4,7 @@ import MemberForm from './components/MemberForm'
 import ExportDialog from './components/ExportDialog'
 import ImportDialog from './components/ImportDialog'
 import LoginPage from './components/LoginPage'
+import AdminPanel from './components/AdminPanel'
 
 const API_BASE = '/api'
 
@@ -11,7 +12,8 @@ function App() {
   const [config, setConfig] = useState(null)
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeView, setActiveView] = useState('liste') // liste, formular, export, import
+  const [activeView, setActiveView] = useState('liste') // liste, formular, export, import, admin
+
   const [editMember, setEditMember] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [notification, setNotification] = useState(null)
@@ -78,6 +80,10 @@ function App() {
   const handleLogin = (benutzer) => {
     setUser(benutzer)
   }
+
+  const isAdmin = user?.rolle === 'admin';
+  const isEditor = isAdmin || user?.rolle === 'editor';
+
 
   const handleLogout = async () => {
     try {
@@ -170,6 +176,10 @@ function App() {
   }
 
   const handleNewMember = () => {
+    if (!isEditor) {
+      showNotification('Keine Berechtigung zum Anlegen von Mitgliedern', 'error')
+      return
+    }
     setEditMember(null)
     setActiveView('formular')
   }
@@ -260,36 +270,54 @@ function App() {
             >
               📋 Mitgliederliste
             </button>
-            <button
-              onClick={handleNewMember}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeView === 'formular' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              ➕ Neues Mitglied
-            </button>
-            <button
-              onClick={() => setActiveView('export')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeView === 'export' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              📄 PDF-Export
-            </button>
-            <button
-              onClick={() => setActiveView('import')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeView === 'import' 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              📥 Import & Abgleich
-            </button>
+            {isEditor && (
+              <button
+                onClick={handleNewMember}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeView === 'formular' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                ➕ Neues Mitglied
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={() => setActiveView('export')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeView === 'export' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                📄 PDF-Export
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={() => setActiveView('import')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeView === 'import' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                📥 Import & Abgleich
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={() => setActiveView('admin')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeView === 'admin' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                🛠️ Admin
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -381,12 +409,14 @@ function App() {
                 />
                 <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
               </div>
-              <button
-                onClick={handleNewMember}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-              >
-                + Neues Mitglied
-              </button>
+              {isEditor && (
+                <button
+                  onClick={handleNewMember}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                >
+                  + Neues Mitglied
+                </button>
+              )}
             </div>
 
             <MemberTable
@@ -423,6 +453,10 @@ function App() {
               showNotification('Import erfolgreich abgeschlossen')
             }}
           />
+        )}
+
+        {activeView === 'admin' && (
+          <AdminPanel onNotification={showNotification} />
         )}
       </main>
     </div>
