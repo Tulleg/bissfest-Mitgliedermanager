@@ -2,7 +2,7 @@
   "vereinsname": "Angelverein Musterstadt e.V.",
   "port": 3500,
   "spalten": [
-    { "key": "mitgliedsnummer", "label": "Mitgliedsnr.", "type": "text", "required": true },
+    { "key": "Nr.", "label": "Nr..", "type": "text", "required": true },
     { "key": "vorname", "label": "Vorname", "type": "text", "required": true },
     { "key": "nachname", "label": "Nachname", "type": "text", "required": true },
     { "key": "geburtsdatum", "label": "Geburtsdatum", "type": "date", "required": false },
