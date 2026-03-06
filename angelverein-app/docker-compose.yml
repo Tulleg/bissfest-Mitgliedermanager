@@ -13,7 +13,7 @@ services:
       # Uploads persistent speichern
       - angelverein-uploads:/app/uploads
       # Config von außen überschreibbar (optional)
-      # - ./config.json:/app/config.json:ro
+      - ./config.json:/app/config.json:ro
     environment:
       - NODE_ENV=production
       - TRUST_PROXY=true
