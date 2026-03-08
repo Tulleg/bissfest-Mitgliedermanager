@@ -60,9 +60,13 @@ router.post('/pdf', requireRole('admin'), async (req, res) => {
     let exportConfig;
     
     if (vorlagenId) {
-      // Vorlage aus DB laden
+      // Vorlage aus DB laden (parseInt sichert Typ-Gleichheit bei ===)
+      const vorlagenIdInt = parseInt(vorlagenId, 10);
+      if (isNaN(vorlagenIdInt)) {
+        return res.status(400).json({ fehler: 'Ungültige Vorlagen-ID' });
+      }
       const vorlagen = db.getExportVorlagen();
-      exportConfig = vorlagen.find(v => v.id === vorlagenId);
+      exportConfig = vorlagen.find(v => v.id === vorlagenIdInt);
       if (!exportConfig) {
         return res.status(404).json({ fehler: 'Vorlage nicht gefunden' });
       }
@@ -80,6 +84,7 @@ router.post('/pdf', requireRole('admin'), async (req, res) => {
     // Mitglieder mit Filter abrufen
     const members = db.getAllMembers(exportConfig.filter || {});
     const count = db.countMembers(exportConfig.filter || {});
+    console.log(`[PDF-Export] Vorlage: "${exportConfig.name}", Felder: ${JSON.stringify(exportConfig.felder)}, Filter: ${JSON.stringify(exportConfig.filter)}, Mitglieder gefunden: ${members.length}`);
 
     // Spalten-Labels aus Config holen
     const spaltenMap = {};

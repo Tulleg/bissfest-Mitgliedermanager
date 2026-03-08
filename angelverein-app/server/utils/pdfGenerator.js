@@ -99,7 +99,7 @@ function generatePDF(options) {
           label,
           startX + (i * colWidth) + 4,
           currentY + 5,
-          { width: colWidth - 8, align: 'left' }
+          { width: colWidth - 8, align: 'left', lineBreak: false }
         );
       }
 
@@ -125,7 +125,7 @@ function generatePDF(options) {
               label,
               startX + (i * colWidth) + 4,
               currentY + 5,
-              { width: colWidth - 8, align: 'left' }
+              { width: colWidth - 8, align: 'left', lineBreak: false }
             );
           }
           currentY += 22;
@@ -161,7 +161,7 @@ function generatePDF(options) {
             String(value),
             startX + (i * colWidth) + 4,
             currentY + 4,
-            { width: colWidth - 8, align: 'left' }
+            { width: colWidth - 8, align: 'left', lineBreak: false }
           );
         }
 

@@ -44,6 +44,12 @@ function ExportDialog({ spalten, vereinsname }) {
         throw new Error(err.fehler || 'Export fehlgeschlagen')
       }
 
+      const contentType = res.headers.get('Content-Type') || ''
+      if (!contentType.includes('application/pdf')) {
+        const text = await res.text()
+        throw new Error('Server hat kein PDF zurückgegeben: ' + text)
+      }
+
       // PDF herunterladen
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
@@ -77,6 +83,12 @@ function ExportDialog({ spalten, vereinsname }) {
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.fehler || 'Export fehlgeschlagen')
+      }
+
+      const contentType2 = res.headers.get('Content-Type') || ''
+      if (!contentType2.includes('application/pdf')) {
+        const text = await res.text()
+        throw new Error('Server hat kein PDF zurückgegeben: ' + text)
       }
 
       const blob = await res.blob()
