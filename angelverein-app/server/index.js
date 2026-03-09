@@ -52,7 +52,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production' && process.env.TRUST_PROXY === 'true',
+    secure: process.env.SECURE_COOKIE === 'true',
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 Tage
   }
