@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const crypto = require('crypto');
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf-8'));
@@ -42,6 +43,10 @@ app.use(express.urlencoded({ extended: true }));
 // Session-Middleware
 app.use(session({
   name: 'angelverein.sid',
+  store: new SQLiteStore({
+    db: 'sessions.db',
+    dir: path.join(__dirname, '..', 'data')
+  }),
   secret: getSessionSecret(),
   resave: false,
   saveUninitialized: false,
