@@ -116,8 +116,8 @@ function getAllMembers(filter = {}) {
 
   for (const [key, value] of Object.entries(filter)) {
     if (value !== undefined && value !== null && value !== '') {
-      conditions.push(`"${key}" = ?`);
-      params.push(value);
+      conditions.push(`"${key}" LIKE ?`);
+      params.push(`%${value}%`);
     }
   }
 
@@ -285,8 +285,8 @@ function countMembers(filter = {}) {
 
   for (const [key, value] of Object.entries(filter)) {
     if (value !== undefined && value !== null && value !== '') {
-      conditions.push(`"${key}" = ?`);
-      params.push(value);
+      conditions.push(`"${key}" LIKE ?`);
+      params.push(`%${value}%`);
     }
   }
 

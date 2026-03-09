@@ -155,8 +155,6 @@ function ExportDialog({ spalten, vereinsname }) {
     }))
   }
 
-  // Filter-Spalten (nur select-Felder)
-  const filterSpalten = spalten.filter(s => s.type === 'select')
 
   return (
     <div className="space-y-6">
@@ -291,41 +289,36 @@ function ExportDialog({ spalten, vereinsname }) {
             </div>
 
             {/* Filter */}
-            {filterSpalten.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter (optional)
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {filterSpalten.map(spalte => (
-                    <div key={spalte.key}>
-                      <label className="block text-xs text-gray-500 mb-1">{spalte.label}</label>
-                      <select
-                        value={newVorlage.filter[spalte.key] || ''}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setNewVorlage(prev => {
-                            const filter = { ...prev.filter }
-                            if (val) {
-                              filter[spalte.key] = val
-                            } else {
-                              delete filter[spalte.key]
-                            }
-                            return { ...prev, filter }
-                          })
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      >
-                        <option value="">— Alle —</option>
-                        {(spalte.options || []).map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filter (optional)
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {spalten.map(spalte => (
+                  <div key={spalte.key}>
+                    <label className="block text-xs text-gray-500 mb-1">{spalte.label}</label>
+                    <input
+                      type="text"
+                      value={newVorlage.filter[spalte.key] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setNewVorlage(prev => {
+                          const filter = { ...prev.filter }
+                          if (val) {
+                            filter[spalte.key] = val
+                          } else {
+                            delete filter[spalte.key]
+                          }
+                          return { ...prev, filter }
+                        })
+                      }}
+                      placeholder={`Filter für ${spalte.label}...`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
             {/* Optionen */}
             <div className="flex items-center gap-6">
