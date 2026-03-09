@@ -19,20 +19,27 @@ router.post('/login', async (req, res) => {
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
-    console.log('Login compare result:', valid, 'for user:', username, 'hash starts with:', user.password_hash.substring(0, 10));
+    if (!valid) {
+      return res.status(401).json({ fehler: 'Ungültige Anmeldedaten' });
+    }
 
     // Session setzen (inkl. Rolle)
     req.session.userId = user.id;
     req.session.username = user.username;
     req.session.role = user.rolle || 'viewer';
 
-    res.json({ 
-      erfolg: true, 
-      benutzer: { 
-        id: user.id, 
-        username: user.username,
-        rolle: req.session.role
-      } 
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ fehler: 'Session konnte nicht gespeichert werden' });
+      }
+      res.json({
+        erfolg: true,
+        benutzer: {
+          id: user.id,
+          username: user.username,
+          rolle: req.session.role
+        }
+      });
     });
   } catch (err) {
     console.error('Login-Fehler:', err);
@@ -101,13 +108,18 @@ router.post('/setup', async (req, res) => {
     req.session.username = user.username;
     req.session.role = 'admin';
 
-    res.json({ 
-      erfolg: true, 
-      benutzer: { 
-        id: user.id, 
-        username: user.username,
-        rolle: 'admin'
-      } 
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ fehler: 'Session konnte nicht gespeichert werden' });
+      }
+      res.json({
+        erfolg: true,
+        benutzer: {
+          id: user.id,
+          username: user.username,
+          rolle: 'admin'
+        }
+      });
     });
   } catch (err) {
     console.error('Setup-Fehler:', err);
