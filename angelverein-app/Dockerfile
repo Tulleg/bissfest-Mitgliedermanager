@@ -22,7 +22,7 @@ WORKDIR /app
 
 # Server Dependencies installieren (Build-Tools für native Module: better-sqlite3, bcrypt)
 COPY package.json package-lock.json ./
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ su-exec && \
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ gosu && \
     npm ci --omit=dev && \
     apt-get purge -y python3 make g++ && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
