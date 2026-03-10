@@ -181,47 +181,49 @@ function AdminPanel({ onNotification }) {
         </button>
       )}
 
-      <table className="w-full text-sm border">
-        <thead>
-          <tr className="bg-gray-50">
-            <th className="px-4 py-2">ID</th>
-            <th className="px-4 py-2">Benutzername</th>
-            <th className="px-4 py-2">Rolle</th>
-            <th className="px-4 py-2">Aktionen</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.id} className="border-t">
-              <td className="px-4 py-2">{u.id}</td>
-              <td className="px-4 py-2">{u.username}</td>
-              <td className="px-4 py-2 capitalize">{u.rolle}</td>
-              <td className="px-4 py-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => changePassword(u)}
-                    className="text-blue-600 hover:underline text-xs"
-                  >
-                    Passwort
-                  </button>
-                  <button
-                    onClick={() => changeRole(u)}
-                    className="text-green-600 hover:underline text-xs"
-                  >
-                    Rolle
-                  </button>
-                  <button
-                    onClick={() => deleteUser(u)}
-                    className="text-red-600 hover:underline text-xs"
-                  >
-                    Löschen
-                  </button>
-                </div>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-4 py-2">ID</th>
+              <th className="px-4 py-2">Benutzername</th>
+              <th className="px-4 py-2">Rolle</th>
+              <th className="px-4 py-2">Aktionen</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} className="border-t">
+                <td className="px-4 py-2">{u.id}</td>
+                <td className="px-4 py-2">{u.username}</td>
+                <td className="px-4 py-2 capitalize">{u.rolle}</td>
+                <td className="px-4 py-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => changePassword(u)}
+                      className="text-blue-600 hover:underline text-xs"
+                    >
+                      Passwort
+                    </button>
+                    <button
+                      onClick={() => changeRole(u)}
+                      className="text-green-600 hover:underline text-xs"
+                    >
+                      Rolle
+                    </button>
+                    <button
+                      onClick={() => deleteUser(u)}
+                      className="text-red-600 hover:underline text-xs"
+                    >
+                      Löschen
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
