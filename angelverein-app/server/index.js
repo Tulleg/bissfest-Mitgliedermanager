@@ -41,12 +41,17 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Session-Middleware
+const sessionStore = new SQLiteStore({
+  db: 'sessions.db',
+  dir: path.join(__dirname, '..', 'data')
+});
+sessionStore.on('error', function(error) {
+  console.error('Session store error:', error);
+});
+
 app.use(session({
   name: 'angelverein.sid',
-  store: new SQLiteStore({
-    db: 'sessions.db',
-    dir: path.join(__dirname, '..', 'data')
-  }),
+  store: sessionStore,
   secret: getSessionSecret(),
   resave: false,
   saveUninitialized: false,

@@ -22,7 +22,7 @@ WORKDIR /app
 
 # Server Dependencies installieren (Build-Tools für native Module: better-sqlite3, bcrypt)
 COPY package.json package-lock.json ./
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && \
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ su-exec && \
     npm ci --omit=dev && \
     apt-get purge -y python3 make g++ && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
@@ -36,19 +36,21 @@ COPY --from=frontend-build /app/client/dist ./client/dist
 # Uploads-Ordner erstellen
 RUN mkdir -p uploads data
 
-# Nicht als root laufen
+# appuser anlegen (Entrypoint wechselt zur Laufzeit zu appuser)
 RUN groupadd -r -g 1001 appgroup && \
     useradd -r -u 1001 -g appgroup appuser && \
     chown -R appuser:appgroup /app
 
-USER appuser
+# Entrypoint-Script kopieren und ausführbar machen
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 # Port
 EXPOSE 3500
 
-# Health Check
+# Health Check (als appuser via su-exec gestartet)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3500/api/config', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
-# Start
-CMD ["node", "server/index.js"]
+# Start als root → Entrypoint setzt Berechtigungen → wechselt zu appuser
+CMD ["./docker-entrypoint.sh"]
