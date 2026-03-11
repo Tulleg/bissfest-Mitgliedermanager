@@ -1,8 +1,9 @@
 # Angelverein-App – Mitgliederverwaltung
 
-Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltung, Import/Export und PDF-Generierung.
+Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltung, Fischverwaltung, Import/Export und rollenbasiertem Benutzersystem.
 
-![Status](https://img.shields.io/badge/status-production--ready-green)
+![Version](https://img.shields.io/badge/version-0.1.0--beta-orange)
+![Status](https://img.shields.io/badge/status-beta-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Node](https://img.shields.io/badge/node-20+-green)
 ![React](https://img.shields.io/badge/react-18+-blue)
@@ -11,13 +12,16 @@ Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltun
 
 ## 🎯 Features
 
-- **👥 Mitgliederverwaltung** – Flexible Spalten, konfigurierbar via JSON
-- **📥 Import** – PDF (mit OCR) und Excel-Dateien importieren
-- **📤 Export** – Anpassbare PDF-Templates mit Deckblatt, Filterinfo und automatischer Schlüssel-Normalisierung
-- **🔐 Authentifizierung** – Sichere Anmeldung mit bcrypt-Hashing
-- **🌐 Web-Interface** – Modernes UI mit React & Tailwind CSS
-- **🐳 Docker-ready** – Produktionsbereit mit Docker Compose
-- **⚙️ Konfigurierbar** – Alle Spalten, Vorlagen und Einstellungen in `config.json`
+- **👥 Mitgliederverwaltung** – Flexible Spalten, vollständig konfigurierbar via `config.json`
+- **📊 Dashboard** – Übersicht mit Mitgliederstatistiken und aktuellem Fisch des Jahres
+- **🐟 Fischverwaltung** – Fisch des Jahres (Jugend & Erwachsene) mit automatischer 3-Jahres-Sperre
+- **📥 Import** – PDF (mit OCR) und Excel-Dateien importieren inkl. Reconciliation/Merge
+- **📤 Export** – Anpassbare PDF-Templates mit Deckblatt, Filterinfo und Datum/Anzahl-Kopfzeile
+- **🔐 Rollenbasiertes Rechtesystem** – admin / editor / viewer mit feingranularer API-Absicherung
+- **👤 Benutzerverwaltung** – Benutzer anlegen, Rollen vergeben, löschen (Admin-Panel)
+- **📱 Mobil-optimiert** – Responsives UI mit React & Tailwind CSS
+- **🐳 Docker-ready** – Produktionsbereit mit Dockerfile & Docker Compose
+- **⚙️ Konfigurierbar** – Alle Spalten, Feldtypen, Export-Vorlagen und Einstellungen in `config.json`
 
 ---
 
@@ -25,11 +29,13 @@ Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltun
 
 | Component | Technologie |
 |-----------|-------------|
-| **Frontend** | React 18 + Vite + Tailwind CSS |
-| **Backend** | Node.js + Express 4 |
+| **Frontend** | React 18 + Vite 5 + Tailwind CSS 3 |
+| **Backend** | Node.js 20+ + Express 4 |
 | **Datenbank** | SQLite (better-sqlite3) |
-| **PDF** | PDFKit (Export – now with cover page & field normalisation), pdf-parse (Import) |
+| **Auth** | bcrypt + express-session |
+| **PDF** | PDFKit (Export), pdf-parse (Import/OCR) |
 | **Excel** | xlsx (SheetJS) |
+| **Tests** | Jest + Supertest |
 | **Deployment** | Docker + Docker Compose |
 
 ---
@@ -37,36 +43,29 @@ Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltun
 ## 🚀 Schnellstart – Entwicklung
 
 ### Anforderungen
-- Node.js 20+ 
-- npm oder yarn
 
-### Installation
+- Node.js 20+
+- npm
+
+### Installation & Start
 
 ```bash
-# Projekt klonen
+# Repository klonen
 git clone https://github.com/deinusername/angelverein-app.git
-cd angelverein-app
+cd angelverein-app/angelverein-app
 
-# Frontend & Backend installieren
+# Abhängigkeiten installieren (Backend + Frontend)
 npm install
-cd client && npm install && cd ..
 
-# .env konfigurieren (optional)
-cp .env.example .env
-
-# config.json anpassen (Vereinsname, Spalten, Vorlagen)
-cp config.json.example config.json
+# config.json anpassen (Vereinsname, Spalten, Export-Vorlagen)
 nano config.json
-```
 
-### Entwicklungsserver starten
-
-```bash
-# Frontend + Backend parallel (mit concurrently)
+# Entwicklungsserver starten (Frontend :5173 + Backend :3500 parallel)
 npm run dev
 ```
 
-Oder einzeln:
+Oder in getrennten Terminals:
+
 ```bash
 # Terminal 1: Backend (Port 3500)
 npm run server
@@ -79,24 +78,20 @@ npm run client
 
 ### Erste Anmeldung
 
-1. Öffne http://localhost:5173 im Browser
-2. Der erste Benutzer wird automatisch als Admin erstellt
-3. Benutzername/Passwort vergeben
-4. Anmelden und Mitglieder verwalten
+1. Browser öffnen → http://localhost:5173
+2. Beim ersten Start erscheint das Setup-Formular
+3. Admin-Benutzername und Passwort vergeben
+4. Anmelden – die App ist einsatzbereit
 
 ---
 
-## 📦 Production Deployment
-
-### Mit Docker Compose
+## 📦 Produktionsbetrieb mit Docker
 
 ```bash
-# Repository ins Deployment-Verzeichnis klonen
-cd /opt/angelverein
-git clone https://github.com/deinusername/angelverein-app.git .
+cd angelverein-app
 
-# config.json anpassen
-nano angelverein-app/config.json
+# config.json anpassen (Vereinsname, Spalten, etc.)
+nano config.json
 
 # Services starten
 docker compose up -d
@@ -105,34 +100,42 @@ docker compose up -d
 docker compose logs -f
 ```
 
-**URL:** http://localhost:3500 (via Reverse Proxy oder Tunnel)
+**URL:** http://localhost:3500 (direkt oder via Reverse Proxy/Tunnel)
 
 ### Umgebungsvariablen
 
-Für Production in `.env` oder im `docker-compose.yml` setzen:
+In `.env` oder im `docker-compose.yml` setzen:
 
 ```env
 NODE_ENV=production
-TRUST_PROXY=true
-SESSION_SECRET=dein-sicherer-zufälliger-string  # Optional, wird auto-generated
 PORT=3500
+TRUST_PROXY=true         # hinter Nginx/Caddy/Traefik
+SESSION_SECRET=...       # optional, wird auto-generiert
+SECURE_COOKIE=true       # für HTTPS-Produktivbetrieb
 ```
 
 ### Persistente Speicherung
 
-Docker Compose verwendet zwei Volumes:
-- `angelverein-data` – Datenbank, Session-Secrets
-- `angelverein-uploads` – Hochgeladene Dateien
+Docker Compose verwendet zwei Volumes, die auch nach `docker compose down` erhalten bleiben:
 
-Diese bleiben auch nach `docker compose down` erhalten.
+- `angelverein-data` – SQLite-Datenbanken, Session-Secret
+- `angelverein-uploads` – hochgeladene Dateien
+
+---
+
+## 👥 Benutzerrollen
+
+| Rolle | Rechte |
+|-------|--------|
+| **admin** | Vollzugriff: Benutzerverwaltung, Import, Export-Vorlagen, Fischverwaltung |
+| **editor** | Mitglieder anlegen / bearbeiten / löschen, Dashboard, Export |
+| **viewer** | Nur lesen: Mitgliederliste, Dashboard, Export-Ansicht |
 
 ---
 
 ## ⚙️ Konfiguration
 
-Die `config.json` definiert das komplette Verhalten:
-
-### Beispiel `config.json`
+Die `config.json` steuert das gesamte Verhalten der App:
 
 ```json
 {
@@ -140,10 +143,11 @@ Die `config.json` definiert das komplette Verhalten:
   "port": 3500,
   "spalten": [
     { "key": "mitgliedsnummer", "label": "Mitgliedsnr.", "type": "text", "required": true },
-    { "key": "vorname", "label": "Vorname", "type": "text", "required": true },
-    { "key": "nachname", "label": "Nachname", "type": "text", "required": true },
-    { "key": "geburtsdatum", "label": "Geburtsdatum", "type": "date", "required": false },
-    { "key": "status", "label": "Status", "type": "select", "options": ["aktiv", "passiv", "ausgetreten"], "required": true }
+    { "key": "vorname",         "label": "Vorname",      "type": "text", "required": true },
+    { "key": "nachname",        "label": "Nachname",     "type": "text", "required": true },
+    { "key": "geburtsdatum",    "label": "Geburtsdatum", "type": "date", "required": false },
+    { "key": "status",          "label": "Status",       "type": "select",
+      "options": ["aktiv", "passiv", "ausgetreten"],     "required": true }
   ],
   "exportVorlagen": [
     {
@@ -160,44 +164,35 @@ Die `config.json` definiert das komplette Verhalten:
 
 ### Feldtypen
 
-- `text` – Freitextfeld
-- `date` – Datumfeld (YYYY-MM-DD)
-- `email` – E-Mail-Feld mit Validierung
-- `boolean` – Ja/Nein Checkbox
-- `select` – Dropdown mit vordefinierten Optionen
-
-ℹ️ Weitere Details: [Siehe config.json.example](angelverein-app/config.json.example)
-
----
-
-## 📚 Dokumentation
-
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** – Detaillierte Deployment-Anleitung
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** – Richtlinien für Entwickler
+| Typ | Beschreibung |
+|-----|-------------|
+| `text` | Freitextfeld |
+| `date` | Datumsfeld (YYYY-MM-DD) |
+| `email` | E-Mail mit Validierung |
+| `boolean` | Ja/Nein Checkbox |
+| `select` | Dropdown mit vordefinierten Optionen |
 
 ---
 
 ## 🔒 Sicherheit
 
-- Passwörter werden mit bcrypt gehashed (Salt: 10 Runden)
-- Session-Secrets werden sicher gespeichert und nicht in der Repo commitet
+- Passwörter werden mit **bcrypt** gehasht (10 Salt-Runden)
+- Session-Secrets werden sicher im `data/`-Verzeichnis gespeichert und nicht ins Repository commitet
+- Alle API-Routen sind durch `requireAuth` geschützt, sensible Routen zusätzlich durch `requireRole`
 - CORS ist konfigurierbar
-- Express.js Best Practices für Session-Management
 
 ---
 
 ## 📋 Lizenz
 
-MIT License – siehe [LICENSE](LICENSE) (falls vorhanden)
+MIT License – siehe [LICENSE](LICENSE)
 
 ---
 
 ## 💬 Support & Kontakt
 
-Fragen oder Fehler?
-- Erstelle ein [GitHub Issue](https://github.com/deinusername/angelverein-app/issues)
-- oder kontaktiere den Projektmaintainer
+Fragen oder Fehler? Erstelle ein [GitHub Issue](https://github.com/deinusername/angelverein-app/issues).
 
 ---
 
-**Viel Spaß mit der Angelverein-App! 🎣**
+**Tight Lines! 🎣**

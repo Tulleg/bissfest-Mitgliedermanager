@@ -103,6 +103,9 @@ function initializeDatabase() {
     console.log('✅ Export-Vorlagen aus Config geladen');
   }
 
+  // Fisch-Tabellen
+  initFischDatabase();
+
   console.log('✅ Datenbank initialisiert');
 }
 
@@ -258,6 +261,98 @@ function deleteExportVorlage(id) {
   return db.prepare('DELETE FROM export_vorlagen WHERE id = ?').run(id);
 }
 
+// ---------------------------------------------------------------------------
+// Fisch des Jahres
+// ---------------------------------------------------------------------------
+
+function initFischDatabase() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS fische (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      kategorie TEXT NOT NULL,
+      gesperrt_bis_jahr INTEGER,
+      erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS fisch_des_jahres (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      jahr INTEGER NOT NULL,
+      kategorie TEXT NOT NULL,
+      fisch_id INTEGER NOT NULL REFERENCES fische(id),
+      erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(jahr, kategorie)
+    )
+  `);
+}
+
+function getAllFische(kategorie) {
+  if (kategorie) {
+    return db.prepare('SELECT * FROM fische WHERE kategorie = ? ORDER BY name').all(kategorie);
+  }
+  return db.prepare('SELECT * FROM fische ORDER BY kategorie, name').all();
+}
+
+function createFisch(name, kategorie) {
+  const result = db.prepare('INSERT INTO fische (name, kategorie) VALUES (?, ?)').run(name, kategorie);
+  return db.prepare('SELECT * FROM fische WHERE id = ?').get(result.lastInsertRowid);
+}
+
+function updateFisch(id, data) {
+  const sets = [];
+  const values = [];
+  if (data.name !== undefined) { sets.push('name = ?'); values.push(data.name); }
+  if (data.gesperrt_bis_jahr !== undefined) { sets.push('gesperrt_bis_jahr = ?'); values.push(data.gesperrt_bis_jahr); }
+  if (sets.length === 0) return db.prepare('SELECT * FROM fische WHERE id = ?').get(id);
+  values.push(id);
+  db.prepare(`UPDATE fische SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+  return db.prepare('SELECT * FROM fische WHERE id = ?').get(id);
+}
+
+function deleteFisch(id) {
+  return db.prepare('DELETE FROM fische WHERE id = ?').run(id);
+}
+
+function getFischDesJahres(jahr, kategorie) {
+  return db.prepare(`
+    SELECT f.*, fj.jahr, fj.id as fj_id
+    FROM fisch_des_jahres fj
+    JOIN fische f ON f.id = fj.fisch_id
+    WHERE fj.jahr = ? AND fj.kategorie = ?
+  `).get(jahr, kategorie);
+}
+
+function getAllFischDesJahres() {
+  return db.prepare(`
+    SELECT fj.id, fj.jahr, fj.kategorie, fj.fisch_id, f.name as fisch_name
+    FROM fisch_des_jahres fj
+    JOIN fische f ON f.id = fj.fisch_id
+    ORDER BY fj.jahr DESC, fj.kategorie
+  `).all();
+}
+
+function setFischDesJahres(jahr, kategorie, fischId) {
+  // Upsert
+  db.prepare(`
+    INSERT INTO fisch_des_jahres (jahr, kategorie, fisch_id)
+    VALUES (?, ?, ?)
+    ON CONFLICT(jahr, kategorie) DO UPDATE SET fisch_id = excluded.fisch_id
+  `).run(jahr, kategorie, fischId);
+  // Sperre automatisch setzen
+  db.prepare('UPDATE fische SET gesperrt_bis_jahr = ? WHERE id = ?').run(jahr + 3, fischId);
+  return getFischDesJahres(jahr, kategorie);
+}
+
+function getMitgliederAnzahlNachKategorie() {
+  const jeField = config.spalten.find(s => s.key === 'je');
+  if (!jeField) return { jugend: 0, erwachsene: 0, gesamt: 0 };
+  const jugend = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(je) = 'J'").get().count;
+  const erwachsene = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(je) = 'E'").get().count;
+  const gesamt = db.prepare('SELECT COUNT(*) as count FROM mitglieder').get().count;
+  return { jugend, erwachsene, gesamt };
+}
+
 // --- test helpers -----------------------------------------------------------
 
 function deleteAllMembers() {
@@ -313,5 +408,13 @@ module.exports = {
   createExportVorlage,
   updateExportVorlage,
   deleteExportVorlage,
-  countMembers
+  countMembers,
+  getAllFische,
+  createFisch,
+  updateFisch,
+  deleteFisch,
+  getFischDesJahres,
+  getAllFischDesJahres,
+  setFischDesJahres,
+  getMitgliederAnzahlNachKategorie
 };

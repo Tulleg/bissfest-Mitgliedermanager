@@ -7,6 +7,7 @@ const SQLiteStore = require('connect-sqlite3')(session);
 const crypto = require('crypto');
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf-8'));
+const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
 const { initializeDatabase } = require('./database');
 const { initializeAuthDatabase } = require('./auth-db');
 const { requireAuth } = require('./middleware/auth');
@@ -82,7 +83,8 @@ app.use('/api/auth', authRouter);
 app.get('/api/config', (req, res) => {
   res.json({
     vereinsname: config.vereinsname,
-    spalten: config.spalten
+    spalten: config.spalten,
+    version
   });
 });
 
@@ -93,10 +95,12 @@ app.use('/api', requireAuth);
 const membersRouter = require('./routes/members');
 const exportRouter = require('./routes/export');
 const importRouter = require('./routes/import');
+const fischeRouter = require('./routes/fische');
 
 app.use('/api/mitglieder', membersRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/import', importRouter);
+app.use('/api/fische', fischeRouter);
 
 // Block access to /data/* paths
 app.get('/data/*', (req, res) => {

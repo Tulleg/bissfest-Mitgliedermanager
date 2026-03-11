@@ -5,6 +5,8 @@ import ExportDialog from './components/ExportDialog'
 import ImportDialog from './components/ImportDialog'
 import LoginPage from './components/LoginPage'
 import AdminPanel from './components/AdminPanel'
+import Dashboard from './components/Dashboard'
+import FischVerwaltung from './components/FischVerwaltung'
 
 const API_BASE = '/api'
 
@@ -12,7 +14,7 @@ function App() {
   const [config, setConfig] = useState(null)
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeView, setActiveView] = useState('liste') // liste, formular, export, import, admin
+  const [activeView, setActiveView] = useState('dashboard') // dashboard, liste, formular, export, import, admin, fische
 
   const [editMember, setEditMember] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -112,7 +114,7 @@ function App() {
     }
     setUser(null)
     setMembers([])
-    setActiveView('liste')
+    setActiveView('dashboard')
     setEditMember(null)
   }
 
@@ -244,7 +246,7 @@ function App() {
               <span className="text-2xl flex-shrink-0">🎣</span>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-bold truncate">{config.vereinsname}</h1>
-                <p className="text-blue-200 text-xs hidden sm:block">Mitgliederverwaltung</p>
+                <p className="text-blue-200 text-xs hidden sm:block">Mitgliederverwaltung · v{config.version}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -286,6 +288,12 @@ function App() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1 py-2">
             <button
+              onClick={() => setActiveView('dashboard')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              🏠 Startseite
+            </button>
+            <button
               onClick={() => { setActiveView('liste'); setEditMember(null); }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'liste' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
             >
@@ -297,6 +305,14 @@ function App() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'formular' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 ➕ Neues Mitglied
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={() => setActiveView('fische')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'fische' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                🐟 Fische
               </button>
             )}
             {isAdmin && (
@@ -328,8 +344,10 @@ function App() {
           {/* Mobile Navigation */}
           <div className="md:hidden flex items-center justify-between py-2">
             <span className="text-sm font-medium text-gray-700">
+              {activeView === 'dashboard' && '🏠 Startseite'}
               {activeView === 'liste' && '📋 Mitgliederliste'}
               {activeView === 'formular' && '✏️ Mitglied'}
+              {activeView === 'fische' && '🐟 Fischverwaltung'}
               {activeView === 'export' && '📄 PDF-Export'}
               {activeView === 'import' && '📥 Import'}
               {activeView === 'admin' && '🛠️ Admin'}
@@ -345,6 +363,12 @@ function App() {
           {mobileNavOpen && (
             <div className="md:hidden pb-2 flex flex-col gap-1">
               <button
+                onClick={() => { setActiveView('dashboard'); setMobileNavOpen(false) }}
+                className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                🏠 Startseite
+              </button>
+              <button
                 onClick={() => { setActiveView('liste'); setEditMember(null); setMobileNavOpen(false) }}
                 className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'liste' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
               >
@@ -356,6 +380,14 @@ function App() {
                   className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'formular' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
                   ➕ Neues Mitglied
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => { setActiveView('fische'); setMobileNavOpen(false) }}
+                  className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'fische' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                >
+                  🐟 Fische
                 </button>
               )}
               {isAdmin && (
@@ -460,6 +492,10 @@ function App() {
 
       {/* Hauptinhalt */}
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {activeView === 'dashboard' && <Dashboard />}
+
+        {activeView === 'fische' && isAdmin && <FischVerwaltung />}
+
         {activeView === 'liste' && (
           <>
             {/* Suchleiste */}
