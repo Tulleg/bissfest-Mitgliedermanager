@@ -3,7 +3,7 @@
   "port": 3500,
   "spalten": [
     { "key": "nr", "label": "Nr.", "type": "text", "required": false },
-    { "key": "je", "label": "J/E", "type": "text", "required": false },
+    { "key": "j/e", "label": "J/E", "type": "text", "required": false },
     { "key": "vorname", "label": "Vorname", "type": "text", "required": true },
     { "key": "nachname", "label": "Nachname", "type": "text", "required": true },
     { "key": "geburtsdatum", "label": "Geburtsdatum", "type": "date", "required": false },

@@ -387,15 +387,17 @@ function setFischDesJahres(jahr, kategorie, fischId) {
 }
 
 function getMitgliederAnzahlNachKategorie() {
-  // gesamt immer zählen, unabhängig davon ob je-Feld konfiguriert ist
   const gesamt = db.prepare('SELECT COUNT(*) as count FROM mitglieder').get().count;
 
-  const jeField = config.spalten.find(s => s.key === 'je');
+  // Unterstützt sowohl 'je' (Entwicklung) als auch 'j/e' (Produktion) als Spaltenname
+  const jeField = config.spalten.find(s => s.key === 'je' || s.key === 'j/e');
   if (!jeField) return { jugend: 0, erwachsene: 0, gesamt };
 
-  // TRIM() schützt gegen versehentliche Leerzeichen in den Werten
-  const jugend = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(TRIM(je)) = 'J'").get().count;
-  const erwachsene = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(TRIM(je)) = 'E'").get().count;
+  // Spaltenname in Anführungszeichen – wichtig für 'j/e', da / sonst als Division gilt
+  const col = `"${jeField.key}"`;
+
+  const jugend = db.prepare(`SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(TRIM(${col})) = 'J'`).get().count;
+  const erwachsene = db.prepare(`SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(TRIM(${col})) = 'E'`).get().count;
 
   return { jugend, erwachsene, gesamt };
 }
