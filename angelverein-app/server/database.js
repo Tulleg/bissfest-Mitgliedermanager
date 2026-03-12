@@ -61,10 +61,52 @@ function initializeDatabase() {
         let sqlType = 'TEXT';
         if (col.type === 'boolean') sqlType = 'INTEGER';
         if (col.type === 'number') sqlType = 'REAL';
-        
+
         db.exec(`ALTER TABLE mitglieder ADD COLUMN "${col.key}" ${sqlType}`);
         console.log(`✅ Spalte "${col.key}" hinzugefügt`);
       }
+    }
+
+    // Prüfe ob veraltete NOT NULL Spalten existieren, die nicht mehr in der config sind.
+    // Diese blockieren das Anlegen neuer Mitglieder (INSERT schlägt fehl).
+    const configKeys = spalten.map(s => s.key);
+    const systemColumns = ['id', 'erstellt_am', 'aktualisiert_am'];
+    const legacyNotNullColumns = existingColumns.filter(col =>
+      !configKeys.includes(col.name) &&
+      !systemColumns.includes(col.name) &&
+      col.notnull === 1
+    );
+
+    if (legacyNotNullColumns.length > 0) {
+      console.log('⚠️ Veraltetes Schema gefunden (NOT NULL Spalten nicht in config):', legacyNotNullColumns.map(c => c.name));
+
+      const memberCount = db.prepare('SELECT COUNT(*) as count FROM mitglieder').get().count;
+      if (memberCount > 0) {
+        // Daten sichern bevor die Tabelle neu erstellt wird
+        db.exec('ALTER TABLE mitglieder RENAME TO mitglieder_backup');
+        console.log('⚠️ Bestehende Daten in "mitglieder_backup" gesichert');
+      } else {
+        db.exec('DROP TABLE mitglieder');
+      }
+
+      // Tabelle mit aktuellem Schema aus der config neu erstellen
+      const newColumnDefs = spalten.map(col => {
+        let sqlType = 'TEXT';
+        if (col.type === 'boolean') sqlType = 'INTEGER';
+        if (col.type === 'number') sqlType = 'REAL';
+        let def = `"${col.key}" ${sqlType}`;
+        if (col.required) def += ' NOT NULL';
+        return def;
+      });
+      db.exec(`
+        CREATE TABLE mitglieder (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ${newColumnDefs.join(',\n          ')},
+          erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP,
+          aktualisiert_am DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('✅ Tabelle "mitglieder" mit aktuellem Schema neu erstellt');
     }
   }
 
@@ -345,11 +387,16 @@ function setFischDesJahres(jahr, kategorie, fischId) {
 }
 
 function getMitgliederAnzahlNachKategorie() {
-  const jeField = config.spalten.find(s => s.key === 'je');
-  if (!jeField) return { jugend: 0, erwachsene: 0, gesamt: 0 };
-  const jugend = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(je) = 'J'").get().count;
-  const erwachsene = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(je) = 'E'").get().count;
+  // gesamt immer zählen, unabhängig davon ob je-Feld konfiguriert ist
   const gesamt = db.prepare('SELECT COUNT(*) as count FROM mitglieder').get().count;
+
+  const jeField = config.spalten.find(s => s.key === 'je');
+  if (!jeField) return { jugend: 0, erwachsene: 0, gesamt };
+
+  // TRIM() schützt gegen versehentliche Leerzeichen in den Werten
+  const jugend = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(TRIM(je)) = 'J'").get().count;
+  const erwachsene = db.prepare("SELECT COUNT(*) as count FROM mitglieder WHERE UPPER(TRIM(je)) = 'E'").get().count;
+
   return { jugend, erwachsene, gesamt };
 }
 
