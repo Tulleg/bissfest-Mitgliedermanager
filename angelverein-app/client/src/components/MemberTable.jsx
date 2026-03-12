@@ -47,6 +47,19 @@ function MemberTable({ members, spalten, loading, onEdit, onDelete, canEdit = tr
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b">
+              <th
+                onClick={() => handleSort('id')}
+                className="px-4 py-3 text-left font-medium text-gray-400 cursor-pointer hover:bg-gray-100 select-none w-16"
+              >
+                <div className="flex items-center gap-1">
+                  ID
+                  {sortField === 'id' && (
+                    <span className="text-blue-500">
+                      {sortDir === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </th>
               {visibleSpalten.map(spalte => (
                 <th
                   key={spalte.key}
@@ -76,6 +89,7 @@ function MemberTable({ members, spalten, loading, onEdit, onDelete, canEdit = tr
                   idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                 }`}
               >
+                <td className="px-4 py-2.5 text-gray-400 text-sm">{member.id}</td>
                 {visibleSpalten.map(spalte => (
                   <td key={spalte.key} className="px-4 py-2.5">
                     {renderCellValue(member[spalte.key], spalte)}
