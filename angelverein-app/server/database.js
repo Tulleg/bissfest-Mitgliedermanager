@@ -168,19 +168,50 @@ function initializeDatabase() {
 }
 
 /**
+ * Baut WHERE-Bedingungen aus dem Filter-Objekt.
+ * Unterstützt neues Format: { feld: { op: "enthält"|"gleich", wert: "X|Y" } }
+ * Sowie altes Format:       { feld: "wert" } → Fallback auf "enthält"
+ * Mit | können mehrere Werte für ODER getrennt werden (z.B. "J|E")
+ */
+function buildFilterConditions(filter) {
+  const conditions = [];
+  const params = [];
+
+  for (const [key, config] of Object.entries(filter)) {
+    // Altes Format (reiner String) → in neues Format umwandeln
+    const op = typeof config === 'string' ? 'enthält' : (config.op || 'enthält');
+    const wert = typeof config === 'string' ? config : config.wert;
+
+    if (!wert || wert.trim() === '') continue;
+
+    // | als ODER-Trenner parsen
+    const teile = wert.split('|').map(t => t.trim()).filter(t => t !== '');
+    if (teile.length === 0) continue;
+
+    let orParts;
+    if (op === 'gleich') {
+      // Exakter Vergleich
+      orParts = teile.map(() => `"${key}" = ?`);
+      teile.forEach(t => params.push(t));
+    } else {
+      // "enthält" → Teilsuche mit LIKE
+      orParts = teile.map(() => `"${key}" LIKE ?`);
+      teile.forEach(t => params.push(`%${t}%`));
+    }
+
+    // Mehrere Teile → OR-Gruppe in Klammern, einzelner Teil → direkt
+    conditions.push(teile.length > 1 ? `(${orParts.join(' OR ')})` : orParts[0]);
+  }
+
+  return { conditions, params };
+}
+
+/**
  * Alle Mitglieder abrufen mit optionalem Filter
  */
 function getAllMembers(filter = {}) {
   let sql = 'SELECT * FROM mitglieder';
-  const conditions = [];
-  const params = [];
-
-  for (const [key, value] of Object.entries(filter)) {
-    if (value !== undefined && value !== null && value !== '') {
-      conditions.push(`"${key}" LIKE ?`);
-      params.push(`%${value}%`);
-    }
-  }
+  const { conditions, params } = buildFilterConditions(filter);
 
   if (conditions.length > 0) {
     sql += ' WHERE ' + conditions.join(' AND ');
@@ -462,15 +493,7 @@ function runRaw(sql, params = []) {
  */
 function countMembers(filter = {}) {
   let sql = 'SELECT COUNT(*) as count FROM mitglieder';
-  const conditions = [];
-  const params = [];
-
-  for (const [key, value] of Object.entries(filter)) {
-    if (value !== undefined && value !== null && value !== '') {
-      conditions.push(`"${key}" LIKE ?`);
-      params.push(`%${value}%`);
-    }
-  }
+  const { conditions, params } = buildFilterConditions(filter);
 
   if (conditions.length > 0) {
     sql += ' WHERE ' + conditions.join(' AND ');

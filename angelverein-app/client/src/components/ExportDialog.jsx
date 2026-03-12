@@ -290,33 +290,60 @@ function ExportDialog({ spalten, vereinsname }) {
 
             {/* Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Filter (optional)
               </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Mehrere Felder werden mit UND verknüpft. Mit <code className="bg-gray-100 px-1 rounded">|</code> mehrere Werte trennen für ODER (z.B. <code className="bg-gray-100 px-1 rounded">J|E</code>).
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {spalten.map(spalte => (
-                  <div key={spalte.key}>
-                    <label className="block text-xs text-gray-500 mb-1">{spalte.label}</label>
-                    <input
-                      type="text"
-                      value={newVorlage.filter[spalte.key] || ''}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        setNewVorlage(prev => {
-                          const filter = { ...prev.filter }
-                          if (val) {
-                            filter[spalte.key] = val
-                          } else {
-                            delete filter[spalte.key]
-                          }
-                          return { ...prev, filter }
-                        })
-                      }}
-                      placeholder={`Filter für ${spalte.label}...`}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                ))}
+                {spalten.map(spalte => {
+                  // Aktuellen Filter-Wert holen (neues Format oder leer)
+                  const filterKonfig = newVorlage.filter[spalte.key] || { op: 'enthält', wert: '' }
+                  return (
+                    <div key={spalte.key}>
+                      <label className="block text-xs text-gray-500 mb-1">{spalte.label}</label>
+                      <div className="flex gap-1">
+                        {/* Operator-Auswahl: "enthält" oder "ist gleich" */}
+                        <select
+                          value={filterKonfig.op}
+                          onChange={(e) => {
+                            setNewVorlage(prev => {
+                              const filter = { ...prev.filter }
+                              if (filterKonfig.wert) {
+                                filter[spalte.key] = { ...filterKonfig, op: e.target.value }
+                              }
+                              return { ...prev, filter }
+                            })
+                          }}
+                          className="px-2 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                        >
+                          <option value="enthält">enthält</option>
+                          <option value="gleich">ist gleich</option>
+                        </select>
+                        {/* Wert-Eingabe */}
+                        <input
+                          type="text"
+                          value={filterKonfig.wert}
+                          onChange={(e) => {
+                            const wert = e.target.value
+                            setNewVorlage(prev => {
+                              const filter = { ...prev.filter }
+                              if (wert) {
+                                filter[spalte.key] = { op: filterKonfig.op, wert }
+                              } else {
+                                delete filter[spalte.key]
+                              }
+                              return { ...prev, filter }
+                            })
+                          }}
+                          placeholder="Wert (| für ODER)"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 

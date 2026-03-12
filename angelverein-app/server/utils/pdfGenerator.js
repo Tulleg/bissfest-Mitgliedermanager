@@ -68,7 +68,14 @@ function generatePDF(options) {
       if (filter && Object.keys(filter).length > 0) {
         const filterTexte = Object.entries(filter)
           .filter(([k, v]) => v)
-          .map(([key, value]) => `${spaltenLabels[key] || key}: ${value}`);
+          .map(([key, config]) => {
+            // Neues Format { op, wert } und altes Format (reiner String) unterstützen
+            const op = typeof config === 'string' ? 'enthält' : (config.op || 'enthält');
+            const wert = typeof config === 'string' ? config : config.wert;
+            // | durch " oder " ersetzen für bessere Lesbarkeit
+            const wertLeserlich = wert.split('|').map(t => t.trim()).join(' oder ');
+            return `${spaltenLabels[key] || key} ${op} "${wertLeserlich}"`;
+          });
         if (filterTexte.length > 0) {
           doc.fontSize(10).fillColor('#888888')
             .text(`Filter: ${filterTexte.join(', ')}`, { align: 'center' });
