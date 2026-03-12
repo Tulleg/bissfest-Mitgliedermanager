@@ -105,7 +105,7 @@ app.use('/api/fische', fischeRouter);
 
 // Spalten-Sichtbarkeit ändern (nur für Admins)
 app.put('/api/settings/spalten/:key', (req, res) => {
-  if (req.user.rolle !== 'admin') {
+  if (req.session.role !== 'admin') {
     return res.status(403).json({ fehler: 'Nur Admins dürfen Spalten-Einstellungen ändern' });
   }
   const { key } = req.params;
