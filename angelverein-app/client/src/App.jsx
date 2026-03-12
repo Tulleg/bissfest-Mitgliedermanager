@@ -58,12 +58,16 @@ function App() {
       .catch(() => setAuthChecking(false))
   }, [])
 
-  // Config laden
-  useEffect(() => {
+  // Config laden – als Funktion, damit sie auch nach Spalten-Änderung neu aufgerufen werden kann
+  const loadConfig = () => {
     fetch(`${API_BASE}/config`)
       .then(res => res.json())
       .then(data => setConfig(data))
       .catch(err => console.error('Config-Fehler:', err))
+  }
+
+  useEffect(() => {
+    loadConfig()
   }, [])
 
   // Mitglieder laden wenn eingeloggt
@@ -558,7 +562,11 @@ function App() {
         )}
 
         {activeView === 'admin' && (
-          <AdminPanel onNotification={showNotification} />
+          <AdminPanel
+                onNotification={showNotification}
+                spalten={config?.spalten || []}
+                loadConfig={loadConfig}
+              />
         )}
       </main>
     </div>

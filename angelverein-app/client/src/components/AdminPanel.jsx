@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 
 const API_BASE = '/api'
 
-function AdminPanel({ onNotification }) {
+function AdminPanel({ onNotification, spalten, loadConfig }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [newUser, setNewUser] = useState({ username: '', password: '', rolle: 'viewer' })
+  // Welcher Tab gerade aktiv ist: 'benutzer' oder 'spalten'
+  const [activeTab, setActiveTab] = useState('benutzer')
 
   useEffect(() => {
     loadUsers()
@@ -118,6 +120,25 @@ function AdminPanel({ onNotification }) {
     }
   }
 
+  // Sichtbarkeit einer Spalte umschalten und config neu laden
+  const toggleSpalte = async (spalte) => {
+    try {
+      const res = await fetch(`${API_BASE}/settings/spalten/${encodeURIComponent(spalte.key)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sichtbar: !spalte.sichtbar })
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.fehler || 'Fehler')
+      }
+      // Config neu laden → MemberTable zeigt sofort die neue Spaltenauswahl
+      loadConfig()
+    } catch (err) {
+      onNotification(err.message, 'error')
+    }
+  }
+
   if (loading) {
     return <div>Lade Nutzer…</div>
   }
@@ -126,104 +147,169 @@ function AdminPanel({ onNotification }) {
     <div>
       <h2 className="text-xl font-bold mb-4">🔧 Admin-Bereich</h2>
 
-      {showCreate ? (
-        <form onSubmit={handleCreate} className="space-y-3 max-w-md">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Benutzername</label>
-            <input
-              type="text"
-              value={newUser.username}
-              onChange={e => setNewUser({ ...newUser, username: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Passwort</label>
-            <input
-              type="password"
-              value={newUser.password}
-              onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              required
-              minLength={6}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Rolle</label>
-            <select
-              value={newUser.rolle}
-              onChange={e => setNewUser({ ...newUser, rolle: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="viewer">Viewer</option>
-              <option value="editor">Editor</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div className="flex gap-2">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg">Erstellen</button>
-            <button
-              type="button"
-              onClick={() => setShowCreate(false)}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
-            >
-              Abbrechen
-            </button>
-          </div>
-        </form>
-      ) : (
+      {/* Tab-Navigation */}
+      <div className="flex gap-2 mb-6 border-b">
         <button
-          onClick={() => setShowCreate(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg mb-4"
+          onClick={() => setActiveTab('benutzer')}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === 'benutzer'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
         >
-          + Neuer Nutzer
+          Benutzerverwaltung
         </button>
+        <button
+          onClick={() => setActiveTab('spalten')}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === 'spalten'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Spalten-Anzeige
+        </button>
+      </div>
+
+      {/* Tab: Benutzerverwaltung */}
+      {activeTab === 'benutzer' && (
+        <div>
+          {showCreate ? (
+            <form onSubmit={handleCreate} className="space-y-3 max-w-md">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Benutzername</label>
+                <input
+                  type="text"
+                  value={newUser.username}
+                  onChange={e => setNewUser({ ...newUser, username: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Passwort</label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Rolle</label>
+                <select
+                  value={newUser.rolle}
+                  onChange={e => setNewUser({ ...newUser, rolle: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="viewer">Viewer</option>
+                  <option value="editor">Editor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg">Erstellen</button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg mb-4"
+            >
+              + Neuer Nutzer
+            </button>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-2">ID</th>
+                  <th className="px-4 py-2">Benutzername</th>
+                  <th className="px-4 py-2">Rolle</th>
+                  <th className="px-4 py-2">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} className="border-t">
+                    <td className="px-4 py-2">{u.id}</td>
+                    <td className="px-4 py-2">{u.username}</td>
+                    <td className="px-4 py-2 capitalize">{u.rolle}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => changePassword(u)}
+                          className="text-blue-600 hover:underline text-xs"
+                        >
+                          Passwort
+                        </button>
+                        <button
+                          onClick={() => changeRole(u)}
+                          className="text-green-600 hover:underline text-xs"
+                        >
+                          Rolle
+                        </button>
+                        <button
+                          onClick={() => deleteUser(u)}
+                          className="text-red-600 hover:underline text-xs"
+                        >
+                          Löschen
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-2">ID</th>
-              <th className="px-4 py-2">Benutzername</th>
-              <th className="px-4 py-2">Rolle</th>
-              <th className="px-4 py-2">Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="border-t">
-                <td className="px-4 py-2">{u.id}</td>
-                <td className="px-4 py-2">{u.username}</td>
-                <td className="px-4 py-2 capitalize">{u.rolle}</td>
-                <td className="px-4 py-2">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => changePassword(u)}
-                      className="text-blue-600 hover:underline text-xs"
-                    >
-                      Passwort
-                    </button>
-                    <button
-                      onClick={() => changeRole(u)}
-                      className="text-green-600 hover:underline text-xs"
-                    >
-                      Rolle
-                    </button>
-                    <button
-                      onClick={() => deleteUser(u)}
-                      className="text-red-600 hover:underline text-xs"
-                    >
-                      Löschen
-                    </button>
-                  </div>
-                </td>
-              </tr>
+      {/* Tab: Spalten-Anzeige */}
+      {activeTab === 'spalten' && (
+        <div>
+          <p className="text-sm text-gray-500 mb-4">
+            Lege fest, welche Spalten in der Mitgliedertabelle angezeigt werden.
+          </p>
+          <div className="space-y-2 max-w-md">
+            {(spalten || []).map(spalte => (
+              <div
+                key={spalte.key}
+                className="flex items-center justify-between p-3 border rounded-lg bg-white"
+              >
+                <div>
+                  <span className="font-medium text-gray-800">{spalte.label}</span>
+                  <span className="ml-2 text-xs text-gray-400">({spalte.key})</span>
+                </div>
+                {/* Toggle-Schalter */}
+                <button
+                  onClick={() => toggleSpalte(spalte)}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${
+                    spalte.sichtbar !== false ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                  title={spalte.sichtbar !== false ? 'Sichtbar – klicken zum Ausblenden' : 'Ausgeblendet – klicken zum Einblenden'}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      spalte.sichtbar !== false ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -8,7 +8,7 @@ const crypto = require('crypto');
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf-8'));
 const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
-const { initializeDatabase } = require('./database');
+const { initializeDatabase, getSpaltenMitSichtbarkeit, setSpaltenSichtbar } = require('./database');
 const { initializeAuthDatabase } = require('./auth-db');
 const { requireAuth } = require('./middleware/auth');
 
@@ -83,7 +83,8 @@ app.use('/api/auth', authRouter);
 app.get('/api/config', (req, res) => {
   res.json({
     vereinsname: config.vereinsname,
-    spalten: config.spalten,
+    // Spalten mit Sichtbarkeits-Info aus der DB anreichern
+    spalten: getSpaltenMitSichtbarkeit(),
     version
   });
 });
@@ -101,6 +102,22 @@ app.use('/api/mitglieder', membersRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/import', importRouter);
 app.use('/api/fische', fischeRouter);
+
+// Spalten-Sichtbarkeit ändern (nur für Admins)
+app.put('/api/settings/spalten/:key', (req, res) => {
+  if (req.user.rolle !== 'admin') {
+    return res.status(403).json({ fehler: 'Nur Admins dürfen Spalten-Einstellungen ändern' });
+  }
+  const { key } = req.params;
+  const { sichtbar } = req.body;
+  // Prüfen ob der key in der config existiert
+  const spalteExistiert = config.spalten.some(s => s.key === key);
+  if (!spalteExistiert) {
+    return res.status(404).json({ fehler: 'Spalte nicht gefunden' });
+  }
+  setSpaltenSichtbar(key, sichtbar);
+  res.json({ ok: true });
+});
 
 // Block access to /data/* paths
 app.get('/data/*', (req, res) => {

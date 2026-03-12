@@ -145,6 +145,22 @@ function initializeDatabase() {
     console.log('✅ Export-Vorlagen aus Config geladen');
   }
 
+  // Settings-Tabelle für App-Einstellungen (z.B. Spalten-Sichtbarkeit)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
+  // Spalten-Sichtbarkeit initialisieren (nur wenn noch kein Eintrag vorhanden)
+  for (const col of spalten) {
+    const exists = db.prepare('SELECT key FROM settings WHERE key = ?').get(`spalte_sichtbar_${col.key}`);
+    if (!exists) {
+      db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(`spalte_sichtbar_${col.key}`, '1');
+    }
+  }
+
   // Fisch-Tabellen
   initFischDatabase();
 
@@ -402,6 +418,28 @@ function getMitgliederAnzahlNachKategorie() {
   return { jugend, erwachsene, gesamt };
 }
 
+/**
+ * Alle Spalten aus der config zurückgeben, ergänzt um den sichtbar-Status aus der DB
+ */
+function getSpaltenMitSichtbarkeit() {
+  return config.spalten.map(col => {
+    const setting = db.prepare('SELECT value FROM settings WHERE key = ?').get(`spalte_sichtbar_${col.key}`);
+    // Wenn kein Eintrag gefunden, gilt die Spalte als sichtbar
+    const sichtbar = setting ? setting.value === '1' : true;
+    return { ...col, sichtbar };
+  });
+}
+
+/**
+ * Sichtbarkeit einer Spalte in der DB speichern
+ */
+function setSpaltenSichtbar(key, sichtbar) {
+  db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(
+    `spalte_sichtbar_${key}`,
+    sichtbar ? '1' : '0'
+  );
+}
+
 // --- test helpers -----------------------------------------------------------
 
 function deleteAllMembers() {
@@ -465,5 +503,7 @@ module.exports = {
   getFischDesJahres,
   getAllFischDesJahres,
   setFischDesJahres,
-  getMitgliederAnzahlNachKategorie
+  getMitgliederAnzahlNachKategorie,
+  getSpaltenMitSichtbarkeit,
+  setSpaltenSichtbar
 };

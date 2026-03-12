@@ -20,8 +20,8 @@ function MemberTable({ members, spalten, loading, onEdit, onDelete, canEdit = tr
     return sortDir === 'asc' ? cmp : -cmp
   })
 
-  // Nur die wichtigsten Spalten in der Tabelle anzeigen (max 8)
-  const visibleSpalten = spalten.slice(0, 8)
+  // Nur sichtbare Spalten anzeigen (gesteuert über Admin-Panel)
+  const visibleSpalten = spalten.filter(s => s.sichtbar !== false)
 
   if (loading) {
     return (
