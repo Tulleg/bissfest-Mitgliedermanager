@@ -94,7 +94,7 @@ export default function Dashboard() {
                 <div className="text-sm text-gray-400">Keine Jubiläen in diesem Jahr</div>
               ) : (
                 <ul className="space-y-1">
-                  {jubilare.geburtstage.map((j, i) => (
+                  {[...jubilare.geburtstage].sort((a, b) => b.jahre - a.jahre).map((j, i) => (
                     <li key={i} className="text-sm text-pink-900">
                       {j.vorname} {j.nachname} – <span className="font-semibold">{j.jahre} Jahre</span>
                     </li>
@@ -110,7 +110,7 @@ export default function Dashboard() {
                 <div className="text-sm text-gray-400">Keine Jubiläen in diesem Jahr</div>
               ) : (
                 <ul className="space-y-1">
-                  {jubilare.mitgliedschaften.map((j, i) => (
+                  {[...jubilare.mitgliedschaften].sort((a, b) => b.jahre - a.jahre).map((j, i) => (
                     <li key={i} className="text-sm text-indigo-900">
                       {j.vorname} {j.nachname} – <span className="font-semibold">{j.jahre} Jahre Mitglied</span>
                     </li>
