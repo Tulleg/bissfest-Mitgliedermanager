@@ -12,6 +12,7 @@
     { "key": "telefon", "label": "Telefon", "type": "text", "required": false },
     { "key": "email", "label": "E-Mail", "type": "email", "required": false },
     { "key": "av", "label": "AV", "type": "date", "required": false },
+    { "key": "mitgliedsdauer", "label": "Mitgliedsdauer", "type": "text", "required": false, "readonly": true },
     { "key": "dav", "label": "DAV", "type": "date", "required": false},
     { "key": "sonstiges", "label": "Sonstiges", "type": "Text", "required": false}
   ],

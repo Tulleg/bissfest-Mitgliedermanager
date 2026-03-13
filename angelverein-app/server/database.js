@@ -33,11 +33,30 @@ function berechneAlter(geburtsdatum) {
   return alter;
 }
 
-// Hängt das berechnete Alter an ein Mitglied-Objekt an.
-// Der eventuell vorhandene DB-Wert in "alter" wird überschrieben.
+// Berechnet die Mitgliedsdauer in Jahren aus dem Eintrittsdatum (av).
+// Gibt null zurück wenn kein oder ungültiges Datum übergeben wird.
+// Funktioniert analog zu berechneAlter() – berücksichtigt ob das Jubiläum schon war.
+function berechneMitgliedsdauer(av) {
+  if (!av) return null;
+  const eintrittsDatum = new Date(av);
+  if (isNaN(eintrittsDatum.getTime())) return null;
+  const heute = new Date();
+  let jahre = heute.getFullYear() - eintrittsDatum.getFullYear();
+  // Prüfen ob das Jubiläum dieses Jahr noch nicht war – dann ein Jahr abziehen
+  const jubilaeum = new Date(heute.getFullYear(), eintrittsDatum.getMonth(), eintrittsDatum.getDate());
+  if (heute < jubilaeum) jahre--;
+  return jahre;
+}
+
+// Hängt das berechnete Alter und die Mitgliedsdauer an ein Mitglied-Objekt an.
+// DB-Werte in "alter" und "mitgliedsdauer" werden überschrieben (nicht in DB gespeichert).
 function mitAlterAnreichern(member) {
   if (!member) return member;
-  return { ...member, alter: berechneAlter(member.geburtsdatum) };
+  return {
+    ...member,
+    alter: berechneAlter(member.geburtsdatum),
+    mitgliedsdauer: berechneMitgliedsdauer(member.av)
+  };
 }
 
 /**
