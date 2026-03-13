@@ -233,10 +233,10 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
             <table className="w-full text-sm border">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Benutzername</th>
-                  <th className="px-4 py-2">Rolle</th>
-                  <th className="px-4 py-2">Aktionen</th>
+                  <th className="px-4 py-2 text-left">ID</th>
+                  <th className="px-4 py-2 text-left">Benutzername</th>
+                  <th className="px-4 py-2 text-left">Rolle</th>
+                  <th className="px-4 py-2 text-left">Aktionen</th>
                 </tr>
               </thead>
               <tbody>
