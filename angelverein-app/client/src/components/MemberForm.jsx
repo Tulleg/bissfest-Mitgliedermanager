@@ -57,6 +57,19 @@ function MemberForm({ spalten, member, onSave, onCancel }) {
       hasError ? 'border-red-300 bg-red-50' : 'border-gray-300'
     }`
 
+    // Readonly-Felder werden grau und nicht editierbar angezeigt.
+    // Der Wert kommt vom Backend (wird dort automatisch berechnet).
+    if (spalte.readonly) {
+      return (
+        <input
+          type="text"
+          value={value ?? ''}
+          readOnly
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+        />
+      )
+    }
+
     switch (spalte.type) {
       case 'boolean':
         return (
@@ -151,6 +164,7 @@ function MemberForm({ spalten, member, onSave, onCancel }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {spalte.label}
                   {spalte.required && <span className="text-red-500 ml-1">*</span>}
+                  {spalte.readonly && <span className="text-gray-400 text-xs ml-1">(automatisch)</span>}
                 </label>
               )}
               {renderField(spalte)}

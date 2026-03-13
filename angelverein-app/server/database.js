@@ -17,6 +17,29 @@ const db = new Database(dbPath);
 // WAL-Modus für bessere Performance
 db.pragma('journal_mode = WAL');
 
+// Berechnet das Alter aus einem Geburtsdatum (YYYY-MM-DD).
+// Gibt null zurück wenn kein oder ungültiges Datum übergeben wird.
+// Das Alter wird nicht in der DB gespeichert, sondern bei jeder Abfrage frisch berechnet,
+// damit es immer aktuell ist – auch wenn kein Update am Mitglied gemacht wurde.
+function berechneAlter(geburtsdatum) {
+  if (!geburtsdatum) return null;
+  const geb = new Date(geburtsdatum);
+  if (isNaN(geb.getTime())) return null;
+  const heute = new Date();
+  let alter = heute.getFullYear() - geb.getFullYear();
+  // Prüfen ob der Geburtstag dieses Jahr noch nicht war – dann ein Jahr abziehen
+  const geburtstagDiesesJahr = new Date(heute.getFullYear(), geb.getMonth(), geb.getDate());
+  if (heute < geburtstagDiesesJahr) alter--;
+  return alter;
+}
+
+// Hängt das berechnete Alter an ein Mitglied-Objekt an.
+// Der eventuell vorhandene DB-Wert in "alter" wird überschrieben.
+function mitAlterAnreichern(member) {
+  if (!member) return member;
+  return { ...member, alter: berechneAlter(member.geburtsdatum) };
+}
+
 /**
  * Erstellt oder aktualisiert die Mitglieder-Tabelle basierend auf der config.json
  */
@@ -218,14 +241,14 @@ function getAllMembers(filter = {}) {
   }
 
   sql += ' ORDER BY nachname, vorname';
-  return db.prepare(sql).all(...params);
+  return db.prepare(sql).all(...params).map(mitAlterAnreichern);
 }
 
 /**
  * Ein Mitglied nach ID abrufen
  */
 function getMemberById(id) {
-  return db.prepare('SELECT * FROM mitglieder WHERE id = ?').get(id);
+  return mitAlterAnreichern(db.prepare('SELECT * FROM mitglieder WHERE id = ?').get(id));
 }
 
 /**
@@ -238,6 +261,8 @@ function createMember(data) {
   const values = [];
 
   for (const col of spalten) {
+    // Readonly-Felder (z.B. alter) nicht speichern – Wert wird dynamisch berechnet
+    if (col.readonly) continue;
     if (data[col.key] !== undefined) {
       keys.push(`"${col.key}"`);
       placeholders.push('?');
@@ -259,6 +284,8 @@ function updateMember(id, data) {
   const values = [];
 
   for (const col of spalten) {
+    // Readonly-Felder (z.B. alter) nicht aktualisieren – Wert wird dynamisch berechnet
+    if (col.readonly) continue;
     if (data[col.key] !== undefined) {
       sets.push(`"${col.key}" = ?`);
       values.push(col.type === 'boolean' ? (data[col.key] ? 1 : 0) : data[col.key]);
@@ -289,7 +316,7 @@ function searchMembers(query) {
   const params = textSpalten.map(() => `%${query}%`);
 
   const sql = `SELECT * FROM mitglieder WHERE ${conditions.join(' OR ')} ORDER BY nachname, vorname`;
-  return db.prepare(sql).all(...params);
+  return db.prepare(sql).all(...params).map(mitAlterAnreichern);
 }
 
 /**
