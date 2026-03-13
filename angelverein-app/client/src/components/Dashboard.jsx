@@ -35,18 +35,18 @@ export default function Dashboard() {
       {/* Mitglieder */}
       <section>
         <h2 className="text-lg font-semibold text-gray-700 mb-3">Mitglieder</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-center">
-            <div className="text-3xl font-bold text-blue-700">{mitglieder.jugend}</div>
-            <div className="text-sm text-blue-600 mt-1 font-medium">Jugend (J)</div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-5 text-center">
+            <div className="text-2xl sm:text-3xl font-bold text-blue-700">{mitglieder.jugend}</div>
+            <div className="text-xs sm:text-sm text-blue-600 mt-1 font-medium">Jugend (J)</div>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-            <div className="text-3xl font-bold text-green-700">{mitglieder.erwachsene}</div>
-            <div className="text-sm text-green-600 mt-1 font-medium">Erwachsene (E)</div>
+          <div className="bg-green-50 border border-green-200 rounded-xl p-3 sm:p-5 text-center">
+            <div className="text-2xl sm:text-3xl font-bold text-green-700">{mitglieder.erwachsene}</div>
+            <div className="text-xs sm:text-sm text-green-600 mt-1 font-medium">Erwachsene (E)</div>
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center">
-            <div className="text-3xl font-bold text-gray-700">{mitglieder.gesamt}</div>
-            <div className="text-sm text-gray-500 mt-1 font-medium">Gesamt</div>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-5 text-center">
+            <div className="text-2xl sm:text-3xl font-bold text-gray-700">{mitglieder.gesamt}</div>
+            <div className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">Gesamt</div>
           </div>
         </div>
       </section>

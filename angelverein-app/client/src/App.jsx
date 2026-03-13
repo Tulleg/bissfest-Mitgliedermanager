@@ -246,13 +246,16 @@ function App() {
       <header className="bg-blue-600 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => setActiveView('dashboard')}
+              className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity text-left"
+            >
               <span className="text-2xl flex-shrink-0">🎣</span>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-bold truncate">{config.vereinsname}</h1>
                 <p className="text-blue-200 text-xs hidden sm:block">Mitgliederverwaltung · v{config.version}</p>
               </div>
-            </div>
+            </button>
             <div className="flex items-center gap-2">
               <span className="hidden sm:inline bg-blue-500 px-3 py-1 rounded-full text-sm">
                 {members.length} Mitglieder
