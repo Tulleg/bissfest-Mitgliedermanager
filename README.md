@@ -1,8 +1,8 @@
-# Angelverein-App – Mitgliederverwaltung
+# Bissfest-App – Mitgliederverwaltung
 
 Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltung, Fischverwaltung, Import/Export und rollenbasiertem Benutzersystem.
 
-![Version](https://img.shields.io/badge/version-0.1.7--beta-orange)
+![Version](https://img.shields.io/badge/version-0.1.8--beta-orange)
 ![Status](https://img.shields.io/badge/status-beta-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Node](https://img.shields.io/badge/node-20+-green)

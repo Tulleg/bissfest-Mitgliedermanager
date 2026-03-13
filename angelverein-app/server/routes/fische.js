@@ -32,8 +32,8 @@ router.get('/dashboard', requireRole('viewer'), (req, res) => {
   }
 });
 
-// Alle Jahresauswahlen abrufen (admin)
-router.get('/jahresauswahl', requireRole('admin'), (req, res) => {
+// Alle Jahresauswahlen abrufen (editor+)
+router.get('/jahresauswahl', requireRole('editor'), (req, res) => {
   try {
     res.json(getAllFischDesJahres());
   } catch (err) {
@@ -41,8 +41,8 @@ router.get('/jahresauswahl', requireRole('admin'), (req, res) => {
   }
 });
 
-// Fisch des Jahres setzen (admin)
-router.post('/jahresauswahl', requireRole('admin'), (req, res) => {
+// Fisch des Jahres setzen (editor+)
+router.post('/jahresauswahl', requireRole('editor'), (req, res) => {
   try {
     const { jahr, kategorie, fisch_id } = req.body;
     if (!jahr || !kategorie || !fisch_id) {
@@ -58,8 +58,8 @@ router.post('/jahresauswahl', requireRole('admin'), (req, res) => {
   }
 });
 
-// Alle Fische abrufen (admin), optional ?kategorie=J|E
-router.get('/', requireRole('admin'), (req, res) => {
+// Alle Fische abrufen (editor+), optional ?kategorie=J|E
+router.get('/', requireRole('editor'), (req, res) => {
   try {
     const { kategorie } = req.query;
     res.json(getAllFische(kategorie || null));
@@ -68,8 +68,8 @@ router.get('/', requireRole('admin'), (req, res) => {
   }
 });
 
-// Fisch anlegen (admin)
-router.post('/', requireRole('admin'), (req, res) => {
+// Fisch anlegen (editor+)
+router.post('/', requireRole('editor'), (req, res) => {
   try {
     const { name, kategorie } = req.body;
     if (!name || !kategorie) {
@@ -84,8 +84,8 @@ router.post('/', requireRole('admin'), (req, res) => {
   }
 });
 
-// Fisch bearbeiten (admin)
-router.put('/:id', requireRole('admin'), (req, res) => {
+// Fisch bearbeiten (editor+)
+router.put('/:id', requireRole('editor'), (req, res) => {
   try {
     const { name, gesperrt_bis_jahr } = req.body;
     const data = {};
@@ -99,8 +99,8 @@ router.put('/:id', requireRole('admin'), (req, res) => {
   }
 });
 
-// Fisch löschen (admin)
-router.delete('/:id', requireRole('admin'), (req, res) => {
+// Fisch löschen (editor+)
+router.delete('/:id', requireRole('editor'), (req, res) => {
   try {
     deleteFisch(Number(req.params.id));
     res.json({ erfolg: true });

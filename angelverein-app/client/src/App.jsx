@@ -314,7 +314,7 @@ function App() {
                 ➕ Neues Mitglied
               </button>
             )}
-            {isAdmin && (
+            {isEditor && (
               <button
                 onClick={() => setActiveView('fische')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'fische' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
@@ -322,7 +322,7 @@ function App() {
                 🐟 Fische
               </button>
             )}
-            {isAdmin && (
+            {isEditor && (
               <button
                 onClick={() => setActiveView('export')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'export' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
@@ -389,7 +389,7 @@ function App() {
                   ➕ Neues Mitglied
                 </button>
               )}
-              {isAdmin && (
+              {isEditor && (
                 <button
                   onClick={() => { setActiveView('fische'); setMobileNavOpen(false) }}
                   className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'fische' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
@@ -397,7 +397,7 @@ function App() {
                   🐟 Fische
                 </button>
               )}
-              {isAdmin && (
+              {isEditor && (
                 <button
                   onClick={() => { setActiveView('export'); setMobileNavOpen(false) }}
                   className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'export' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
@@ -501,7 +501,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {activeView === 'dashboard' && <Dashboard />}
 
-        {activeView === 'fische' && isAdmin && <FischVerwaltung />}
+        {activeView === 'fische' && isEditor && <FischVerwaltung />}
 
         {activeView === 'liste' && (
           <>
@@ -547,7 +547,7 @@ function App() {
           />
         )}
 
-        {activeView === 'export' && (
+        {activeView === 'export' && isEditor && (
           <ExportDialog
             spalten={config.spalten}
             vereinsname={config.vereinsname}

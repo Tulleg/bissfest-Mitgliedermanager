@@ -9,7 +9,7 @@ const path = require('path');
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'config.json'), 'utf-8'));
 
 // GET /api/export/vorlagen - Alle Export-Vorlagen abrufen
-router.get('/vorlagen', requireRole('admin'), (req, res) => {
+router.get('/vorlagen', requireRole('editor'), (req, res) => {
   try {
     const vorlagen = db.getExportVorlagen();
     res.json(vorlagen);
@@ -20,7 +20,7 @@ router.get('/vorlagen', requireRole('admin'), (req, res) => {
 });
 
 // POST /api/export/vorlagen - Neue Export-Vorlage erstellen
-router.post('/vorlagen', requireRole('admin'), (req, res) => {
+router.post('/vorlagen', requireRole('editor'), (req, res) => {
   try {
     const id = db.createExportVorlage(req.body);
     res.status(201).json({ id, nachricht: 'Vorlage erstellt' });
@@ -31,7 +31,7 @@ router.post('/vorlagen', requireRole('admin'), (req, res) => {
 });
 
 // PUT /api/export/vorlagen/:id - Export-Vorlage aktualisieren
-router.put('/vorlagen/:id', requireRole('admin'), (req, res) => {
+router.put('/vorlagen/:id', requireRole('editor'), (req, res) => {
   try {
     db.updateExportVorlage(req.params.id, req.body);
     res.json({ nachricht: 'Vorlage aktualisiert' });
@@ -42,7 +42,7 @@ router.put('/vorlagen/:id', requireRole('admin'), (req, res) => {
 });
 
 // DELETE /api/export/vorlagen/:id - Export-Vorlage löschen
-router.delete('/vorlagen/:id', requireRole('admin'), (req, res) => {
+router.delete('/vorlagen/:id', requireRole('editor'), (req, res) => {
   try {
     db.deleteExportVorlage(req.params.id);
     res.json({ nachricht: 'Vorlage gelöscht' });
@@ -53,7 +53,7 @@ router.delete('/vorlagen/:id', requireRole('admin'), (req, res) => {
 });
 
 // POST /api/export/pdf - PDF generieren
-router.post('/pdf', requireRole('admin'), async (req, res) => {
+router.post('/pdf', requireRole('editor'), async (req, res) => {
   try {
     const { vorlagenId, customConfig } = req.body;
     
