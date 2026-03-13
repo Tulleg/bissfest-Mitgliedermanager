@@ -27,6 +27,16 @@ function initializeAuthDatabase() {
     )
   `);
 
+  // Tabelle für benutzerspezifische Spalten-Einstellungen
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS benutzer_spalten (
+      user_id INTEGER NOT NULL,
+      spalten_key TEXT NOT NULL,
+      sichtbar INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (user_id, spalten_key)
+    )
+  `);
+
   // Prüfen ob Rolle-Spalte existiert (für Migration alter Versionen)
   const cols = db.prepare("PRAGMA table_info(benutzer)").all().map(c => c.name);
   if (!cols.includes('rolle')) {
@@ -98,6 +108,30 @@ function deleteUser(id) {
   return db.prepare('DELETE FROM benutzer WHERE id = ?').run(id);
 }
 
+/**
+ * Alle Spalten-Einstellungen eines Benutzers abrufen
+ * Gibt ein Objekt zurück: { "nachname": true, "vorname": false, ... }
+ */
+function getUserSpaltenSichtbar(userId) {
+  const rows = db.prepare('SELECT spalten_key, sichtbar FROM benutzer_spalten WHERE user_id = ?').all(userId);
+  const result = {};
+  for (const row of rows) {
+    result[row.spalten_key] = row.sichtbar === 1;
+  }
+  return result;
+}
+
+/**
+ * Eine Spalten-Einstellung für einen Benutzer speichern (upsert)
+ */
+function setUserSpaltenSichtbar(userId, spaltenKey, sichtbar) {
+  db.prepare(`
+    INSERT INTO benutzer_spalten (user_id, spalten_key, sichtbar)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_id, spalten_key) DO UPDATE SET sichtbar = excluded.sichtbar
+  `).run(userId, spaltenKey, sichtbar ? 1 : 0);
+}
+
 module.exports = {
   initializeAuthDatabase,
   getUser,
@@ -108,5 +142,7 @@ module.exports = {
   updateUserRole,
   deleteUser,
   getAllUsers,
-  countUsers
+  countUsers,
+  getUserSpaltenSichtbar,
+  setUserSpaltenSichtbar
 };

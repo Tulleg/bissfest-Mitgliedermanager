@@ -1,8 +1,23 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
-function MemberTable({ members, spalten, loading, onEdit, onDelete, canEdit = true, canDelete = true }) {
+function MemberTable({ members, spalten, loading, onEdit, onDelete, canEdit = true, canDelete = true, onSpalteToggle }) {
   const [sortField, setSortField] = useState('nachname')
   const [sortDir, setSortDir] = useState('asc')
+
+  // Steuerung des Spalten-Picker-Dropdowns (nur sichtbar wenn onSpalteToggle übergeben wurde)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const pickerRef = useRef(null)
+
+  // Dropdown schließen wenn außerhalb geklickt wird
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setPickerOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -77,7 +92,43 @@ function MemberTable({ members, spalten, loading, onEdit, onDelete, canEdit = tr
                 </th>
               ))}
               <th className="px-4 py-3 text-right font-medium text-gray-600 w-24">
-                Aktionen
+                <div className="flex items-center justify-end gap-2">
+                  Aktionen
+                  {/* Spalten-Picker: nur für editor/admin sichtbar */}
+                  {onSpalteToggle && (
+                    <div className="relative" ref={pickerRef}>
+                      <button
+                        onClick={() => setPickerOpen(o => !o)}
+                        className="p-1 rounded hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-700"
+                        title="Spalten auswählen"
+                      >
+                        ⚙️
+                      </button>
+                      {pickerOpen && (
+                        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-50 py-1">
+                          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 border-b">
+                            Spalten anzeigen
+                          </div>
+                          {/* Alle Spalten (auch ausgeblendete) zur Auswahl anbieten */}
+                          {spalten.map(s => (
+                            <label
+                              key={s.key}
+                              className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={s.sichtbar !== false}
+                                onChange={e => onSpalteToggle(s.key, e.target.checked)}
+                                className="rounded"
+                              />
+                              {s.label}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </th>
             </tr>
           </thead>

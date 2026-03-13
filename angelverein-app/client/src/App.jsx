@@ -26,6 +26,9 @@ function App() {
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ altesPasswort: '', neuesPasswort: '', bestaetigung: '' })
 
+  // Benutzerspezifische Spalten-Sichtbarkeit (nur für editor/admin)
+  const [userSpaltenPrefs, setUserSpaltenPrefs] = useState({})
+
   // Mobile UI State
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -52,6 +55,7 @@ function App() {
       .then(data => {
         if (data.eingeloggt) {
           setUser(data.benutzer)
+          loadUserSpaltenPrefs(data.benutzer.rolle)
         }
         setAuthChecking(false)
       })
@@ -102,12 +106,44 @@ function App() {
     setTimeout(() => setNotification(null), 4000)
   }
 
+  // Spalten-Prefs des eingeloggten Benutzers vom Server laden
+  // Viewer überspringen – sie nutzen immer den Admin-Standard
+  const loadUserSpaltenPrefs = async (rolle) => {
+    if (rolle === 'viewer') return
+    try {
+      const res = await fetch(`${API_BASE}/auth/user/spalten`)
+      if (res.ok) {
+        const prefs = await res.json()
+        setUserSpaltenPrefs(prefs)
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Spalten-Prefs:', err)
+    }
+  }
+
   const handleLogin = (benutzer) => {
     setUser(benutzer)
+    loadUserSpaltenPrefs(benutzer.rolle)
+  }
+
+  // Eine Spalte ein- oder ausblenden und in der DB speichern
+  const handleSpalteToggle = async (key, sichtbar) => {
+    // Lokal sofort aktualisieren (UI reagiert direkt)
+    setUserSpaltenPrefs(prev => ({ ...prev, [key]: sichtbar }))
+    try {
+      await fetch(`${API_BASE}/auth/user/spalten/${encodeURIComponent(key)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sichtbar })
+      })
+    } catch (err) {
+      console.error('Fehler beim Speichern der Spalten-Pref:', err)
+    }
   }
 
   const isAdmin = user?.rolle === 'admin';
   const isEditor = isAdmin || user?.rolle === 'editor';
+  const isViewer = user?.rolle === 'viewer';
 
 
   const handleLogout = async () => {
@@ -530,10 +566,21 @@ function App() {
 
             <MemberTable
               members={members}
-              spalten={config.spalten}
+              spalten={isViewer
+                ? config.spalten
+                // Admin-Standard mit User-Prefs zusammenführen:
+                // Hat der User eine eigene Einstellung → diese nutzen, sonst Admin-Standard
+                : config.spalten.map(s => ({
+                    ...s,
+                    sichtbar: Object.prototype.hasOwnProperty.call(userSpaltenPrefs, s.key)
+                      ? userSpaltenPrefs[s.key]
+                      : s.sichtbar !== false
+                  }))
+              }
               loading={loading}
               onEdit={handleEditMember}
               onDelete={handleDeleteMember}
+              onSpalteToggle={!isViewer ? handleSpalteToggle : undefined}
             />
           </>
         )}

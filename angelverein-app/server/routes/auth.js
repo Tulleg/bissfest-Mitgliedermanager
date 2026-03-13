@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
-const { getUser, getUserById, createUser, createUserWithRole, updateUserPassword, updateUserRole, deleteUser, getAllUsers, countUsers } = require('../auth-db');
+const { getUser, getUserById, createUser, createUserWithRole, updateUserPassword, updateUserRole, deleteUser, getAllUsers, countUsers, getUserSpaltenSichtbar, setUserSpaltenSichtbar } = require('../auth-db');
 const { requireRole } = require('../middleware/roleCheck');
 
 // Login
@@ -174,6 +174,42 @@ router.put('/users/:id/passwort', requireRole('admin'), async (req, res) => {
   } catch (err) {
     console.error('Admin Passwort Reset Fehler:', err);
     res.status(500).json({ fehler: 'Fehler beim Zurücksetzen des Passworts' });
+  }
+});
+
+// Benutzerspezifische Spalten-Einstellungen abrufen
+// Viewer bekommen ein leeres Objekt – sie nutzen immer den Admin-Standard
+router.get('/user/spalten', (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ fehler: 'Nicht eingeloggt' });
+  }
+  if (req.session.role === 'viewer') {
+    return res.json({});
+  }
+  try {
+    const prefs = getUserSpaltenSichtbar(req.session.userId);
+    res.json(prefs);
+  } catch (err) {
+    console.error('Fehler beim Laden der Spalten-Prefs:', err);
+    res.status(500).json({ fehler: 'Interner Serverfehler' });
+  }
+});
+
+// Benutzerspezifische Spalten-Einstellung speichern
+router.put('/user/spalten/:key', (req, res) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ fehler: 'Nicht eingeloggt' });
+  }
+  if (req.session.role === 'viewer') {
+    return res.status(403).json({ fehler: 'Viewer können keine Spalten anpassen' });
+  }
+  try {
+    const { sichtbar } = req.body;
+    setUserSpaltenSichtbar(req.session.userId, req.params.key, sichtbar);
+    res.json({ erfolg: true });
+  } catch (err) {
+    console.error('Fehler beim Speichern der Spalten-Pref:', err);
+    res.status(500).json({ fehler: 'Interner Serverfehler' });
   }
 });
 
