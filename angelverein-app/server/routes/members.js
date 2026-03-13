@@ -40,6 +40,44 @@ router.get('/anzahl', requireRole('viewer'), (req, res) => {
   }
 });
 
+// GET /api/mitglieder/jubilare - Jubilare des aktuellen Jahres
+router.get('/jubilare', requireRole('viewer'), (req, res) => {
+  try {
+    const allesMitglieder = db.getAllMembers();
+    const aktuellesJahr = new Date().getFullYear();
+    const geburtstage = [];
+    const mitgliedschaften = [];
+
+    for (const m of allesMitglieder) {
+      // Geburtstagsjubiläen: Alter durch 5 teilbar
+      if (m.geburtsdatum) {
+        const gebJahr = new Date(m.geburtsdatum).getFullYear();
+        const alter = aktuellesJahr - gebJahr;
+        if (alter > 0 && alter % 5 === 0) {
+          geburtstage.push({ vorname: m.vorname, nachname: m.nachname, jahre: alter });
+        }
+      }
+      // Vereinsjubiläen: Mitgliedsjahre durch 5 teilbar
+      if (m.av) {
+        const avJahr = new Date(m.av).getFullYear();
+        const dauer = aktuellesJahr - avJahr;
+        if (dauer > 0 && dauer % 5 === 0) {
+          mitgliedschaften.push({ vorname: m.vorname, nachname: m.nachname, jahre: dauer });
+        }
+      }
+    }
+
+    // Alphabetisch nach Nachname sortieren
+    geburtstage.sort((a, b) => a.nachname.localeCompare(b.nachname));
+    mitgliedschaften.sort((a, b) => a.nachname.localeCompare(b.nachname));
+
+    res.json({ geburtstage, mitgliedschaften, jahr: aktuellesJahr });
+  } catch (error) {
+    console.error('Fehler beim Abrufen der Jubilare:', error);
+    res.status(500).json({ fehler: 'Fehler beim Abrufen der Jubilare' });
+  }
+});
+
 // GET /api/mitglieder/:id - Ein Mitglied abrufen
 router.get('/:id', requireRole('viewer'), (req, res) => {
   try {
