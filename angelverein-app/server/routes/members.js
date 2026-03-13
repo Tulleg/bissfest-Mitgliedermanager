@@ -54,7 +54,7 @@ router.get('/jubilare', requireRole('viewer'), (req, res) => {
         const gebJahr = new Date(m.geburtsdatum).getFullYear();
         const alter = aktuellesJahr - gebJahr;
         if (alter > 0 && alter % 5 === 0) {
-          geburtstage.push({ vorname: m.vorname, nachname: m.nachname, jahre: alter });
+          geburtstage.push({ vorname: m.vorname, nachname: m.nachname, jahre: alter, datum: m.geburtsdatum });
         }
       }
       // Vereinsjubiläen: Mitgliedsjahre durch 5 teilbar
@@ -62,7 +62,7 @@ router.get('/jubilare', requireRole('viewer'), (req, res) => {
         const avJahr = new Date(m.av).getFullYear();
         const dauer = aktuellesJahr - avJahr;
         if (dauer > 0 && dauer % 5 === 0) {
-          mitgliedschaften.push({ vorname: m.vorname, nachname: m.nachname, jahre: dauer });
+          mitgliedschaften.push({ vorname: m.vorname, nachname: m.nachname, jahre: dauer, datum: m.av });
         }
       }
     }

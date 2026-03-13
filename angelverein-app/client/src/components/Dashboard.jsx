@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
 
+// Wandelt ein ISO-Datum (z.B. "1976-03-15") in deutsches Format um: "15.03."
+const formatDatum = (isoString) => {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const tag = String(d.getDate()).padStart(2, '0');
+  const monat = String(d.getMonth() + 1).padStart(2, '0');
+  return `${tag}.${monat}.`;
+};
+
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +106,7 @@ export default function Dashboard() {
                   {[...jubilare.geburtstage].sort((a, b) => b.jahre - a.jahre).map((j, i) => (
                     <li key={i} className="text-sm text-pink-900">
                       {j.vorname} {j.nachname} – <span className="font-semibold">{j.jahre} Jahre</span>
+                      {j.datum && <span className="text-pink-500 ml-1">({formatDatum(j.datum)})</span>}
                     </li>
                   ))}
                 </ul>
@@ -113,6 +123,7 @@ export default function Dashboard() {
                   {[...jubilare.mitgliedschaften].sort((a, b) => b.jahre - a.jahre).map((j, i) => (
                     <li key={i} className="text-sm text-indigo-900">
                       {j.vorname} {j.nachname} – <span className="font-semibold">{j.jahre} Jahre Mitglied</span>
+                      {j.datum && <span className="text-indigo-500 ml-1">({formatDatum(j.datum)})</span>}
                     </li>
                   ))}
                 </ul>

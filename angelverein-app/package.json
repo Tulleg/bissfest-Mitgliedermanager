@@ -1,6 +1,6 @@
 {
   "name": "angelverein-app",
-  "version": "0.1.6-beta",
+  "version": "0.1.7-beta",
   "description": "Mitgliederverwaltung für Angelverein",
   "private": true,
   "scripts": {
