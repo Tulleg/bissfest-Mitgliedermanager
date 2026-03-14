@@ -215,4 +215,6 @@ Zugriff auf den Server auf autorisierte Personen beschränken
 Haftungsausschluss
 Diese Software wird unter der MIT-Lizenz bereitgestellt. Der Entwickler übernimmt keine Haftung für datenschutzrechtliche Verstöße die durch unsachgemäßen Betrieb entstehen.
 
+---
+
 **Tight Lines! 🎣**
