@@ -9,11 +9,28 @@ const formatDatum = (isoString) => {
   return `${tag}.${monat}.`;
 };
 
+// ISO-Datum → "10. Januar 2026"
+const formatTerminDatum = (isoString) => {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+// ISO-Datum → Wochentag
+const getWochentag = (isoString) => {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('de-DE', { weekday: 'long' });
+};
+
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fehler, setFehler] = useState(null);
   const [jubilare, setJubilare] = useState(null);
+  const [naechsteTermine, setNaechsteTermine] = useState(null);
 
   useEffect(() => {
     // Dashboard-Daten (Mitgliederzahlen + Fisch des Jahres)
@@ -27,6 +44,12 @@ export default function Dashboard() {
       .then(r => r.json())
       .then(d => setJubilare(d))
       .catch(() => setJubilare(null));
+
+    // Nächste Termine (aus freigegebenen Terminplänen)
+    fetch('/api/termine/naechste', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setNaechsteTermine(Array.isArray(d) ? d : []))
+      .catch(() => setNaechsteTermine([]));
   }, []);
 
   if (loading) {
@@ -90,6 +113,27 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+
+      {/* Nächste Termine */}
+      {naechsteTermine && naechsteTermine.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">Nächste Termine</h2>
+          <div className="flex flex-col gap-3">
+            {naechsteTermine.map((termin) => (
+              <div key={termin.id} className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="flex-shrink-0">
+                  <div className="text-base font-bold text-cyan-800">{formatTerminDatum(termin.datum)}</div>
+                  <div className="text-xs text-cyan-600">{getWochentag(termin.datum)}{termin.uhrzeit ? ` · ${termin.uhrzeit}` : ''}</div>
+                </div>
+                <div className="sm:ml-4 flex-1">
+                  <div className="font-semibold text-cyan-900 text-sm">{termin.beschreibung || '–'}</div>
+                  {termin.ort && <div className="text-xs text-cyan-600 mt-0.5">📍 {termin.ort}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Jubilare */}
       {jubilare && (

@@ -16,6 +16,24 @@
     { "key": "dav", "label": "DAV", "type": "date", "required": false},
     { "key": "sonstiges", "label": "Sonstiges", "type": "Text", "required": false}
   ],
+  "terminplan": {
+    "regeln": "Hier die Wettkampfregeln eintragen.",
+    "punkteverteilung": "4 Punkte (1.) | 3 Punkte (2.) | 2 Punkte (3.) | 1 Punkt (4.)",
+    "vorstand": [
+      {
+        "rolle": "1. Vorsitzender",
+        "name": "Max Mustermann",
+        "adresse": "Musterstraße 1, 12345 Musterstadt",
+        "telefon": "01234 / 567890",
+        "email": "max@beispiel.de"
+      }
+    ],
+    "bankdaten": {
+      "name": "Angelverein Muster e.V.",
+      "iban": "DE00000000000000000000",
+      "bic": "BEISPIELXXX"
+    }
+  },
   "exportVorlagen": [
     {
       "name": "Verbandsmeldung",

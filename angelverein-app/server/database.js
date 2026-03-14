@@ -206,6 +206,9 @@ function initializeDatabase() {
   // Fisch-Tabellen
   initFischDatabase();
 
+  // Terminplan-Tabellen
+  initTerminDatabase();
+
   console.log('✅ Datenbank initialisiert');
 }
 
@@ -517,6 +520,130 @@ function setSpaltenSichtbar(key, sichtbar) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Terminplan
+// ---------------------------------------------------------------------------
+
+function initTerminDatabase() {
+  // Einzelne Termine pro Jahr
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS termine (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      jahr INTEGER NOT NULL,
+      datum TEXT NOT NULL,
+      ausweichtermin TEXT,
+      uhrzeit TEXT,
+      ort TEXT,
+      beschreibung TEXT,
+      reihenfolge INTEGER DEFAULT 0,
+      erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP,
+      aktualisiert_am DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Entwurf/Freigabe-Status pro Jahr
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS terminplan_jahre (
+      jahr INTEGER PRIMARY KEY,
+      status TEXT NOT NULL DEFAULT 'entwurf',
+      freigegeben_am TEXT
+    )
+  `);
+}
+
+// Alle Termine eines Jahres, sortiert nach Datum
+function getAllTermine(jahr) {
+  return db.prepare(
+    'SELECT * FROM termine WHERE jahr = ? ORDER BY datum, reihenfolge'
+  ).all(jahr);
+}
+
+// Nächste N Termine ab heute, nur aus freigegebenen Jahren
+function getNaechsteTermine(limit = 2) {
+  const heute = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return db.prepare(`
+    SELECT t.*
+    FROM termine t
+    JOIN terminplan_jahre tj ON tj.jahr = t.jahr
+    WHERE tj.status = 'freigegeben'
+      AND t.datum >= ?
+    ORDER BY t.datum, t.reihenfolge
+    LIMIT ?
+  `).all(heute, limit);
+}
+
+// Termin anlegen
+function createTermin(data) {
+  const result = db.prepare(`
+    INSERT INTO termine (jahr, datum, ausweichtermin, uhrzeit, ort, beschreibung, reihenfolge)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    data.jahr,
+    data.datum,
+    data.ausweichtermin || null,
+    data.uhrzeit || null,
+    data.ort || null,
+    data.beschreibung || null,
+    data.reihenfolge || 0
+  );
+  return db.prepare('SELECT * FROM termine WHERE id = ?').get(result.lastInsertRowid);
+}
+
+// Termin aktualisieren
+function updateTermin(id, data) {
+  db.prepare(`
+    UPDATE termine
+    SET datum = ?, ausweichtermin = ?, uhrzeit = ?, ort = ?, beschreibung = ?, reihenfolge = ?,
+        aktualisiert_am = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(
+    data.datum,
+    data.ausweichtermin || null,
+    data.uhrzeit || null,
+    data.ort || null,
+    data.beschreibung || null,
+    data.reihenfolge || 0,
+    id
+  );
+  return db.prepare('SELECT * FROM termine WHERE id = ?').get(id);
+}
+
+// Termin löschen
+function deleteTermin(id) {
+  return db.prepare('DELETE FROM termine WHERE id = ?').run(id);
+}
+
+// Status eines Jahres abrufen (gibt null zurück wenn noch kein Eintrag existiert)
+function getTerminplanStatus(jahr) {
+  return db.prepare('SELECT * FROM terminplan_jahre WHERE jahr = ?').get(jahr);
+}
+
+// Status eines Jahres setzen (Upsert)
+function setTerminplanStatus(jahr, status) {
+  const freigegeben_am = status === 'freigegeben' ? new Date().toISOString() : null;
+  db.prepare(`
+    INSERT INTO terminplan_jahre (jahr, status, freigegeben_am)
+    VALUES (?, ?, ?)
+    ON CONFLICT(jahr) DO UPDATE SET status = excluded.status, freigegeben_am = excluded.freigegeben_am
+  `).run(jahr, status, freigegeben_am);
+  return db.prepare('SELECT * FROM terminplan_jahre WHERE jahr = ?').get(jahr);
+}
+
+// Alle Jahre mit Status – plus Jahre die Termine haben aber noch keinen Status-Eintrag
+function getAllTerminplanJahre() {
+  // Jahre aus der terminplan_jahre-Tabelle
+  const mitStatus = db.prepare('SELECT * FROM terminplan_jahre ORDER BY jahr DESC').all();
+  // Jahre aus termine-Tabelle die noch keinen Status-Eintrag haben
+  const ohneStatus = db.prepare(`
+    SELECT DISTINCT jahr FROM termine
+    WHERE jahr NOT IN (SELECT jahr FROM terminplan_jahre)
+    ORDER BY jahr DESC
+  `).all();
+  // Zusammenführen: Einträge ohne Status bekommen default 'entwurf'
+  const ohneStatusMapped = ohneStatus.map(r => ({ jahr: r.jahr, status: 'entwurf', freigegeben_am: null }));
+  return [...mitStatus, ...ohneStatusMapped].sort((a, b) => b.jahr - a.jahr);
+}
+
 // --- test helpers -----------------------------------------------------------
 
 function deleteAllMembers() {
@@ -574,5 +701,13 @@ module.exports = {
   setFischDesJahres,
   getMitgliederAnzahlNachKategorie,
   getSpaltenMitSichtbarkeit,
-  setSpaltenSichtbar
+  setSpaltenSichtbar,
+  getAllTermine,
+  getNaechsteTermine,
+  createTermin,
+  updateTermin,
+  deleteTermin,
+  getTerminplanStatus,
+  setTerminplanStatus,
+  getAllTerminplanJahre
 };

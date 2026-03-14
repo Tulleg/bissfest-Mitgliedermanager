@@ -97,11 +97,13 @@ const membersRouter = require('./routes/members');
 const exportRouter = require('./routes/export');
 const importRouter = require('./routes/import');
 const fischeRouter = require('./routes/fische');
+const termineRouter = require('./routes/termine');
 
 app.use('/api/mitglieder', membersRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/import', importRouter);
 app.use('/api/fische', fischeRouter);
+app.use('/api/termine', termineRouter);
 
 // Spalten-Sichtbarkeit ändern (nur für Admins)
 app.put('/api/settings/spalten/:key', (req, res) => {

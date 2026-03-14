@@ -7,6 +7,7 @@ import LoginPage from './components/LoginPage'
 import AdminPanel from './components/AdminPanel'
 import Dashboard from './components/Dashboard'
 import FischVerwaltung from './components/FischVerwaltung'
+import TerminplanVerwaltung from './components/TerminplanVerwaltung'
 
 const API_BASE = '/api'
 
@@ -14,7 +15,7 @@ function App() {
   const [config, setConfig] = useState(null)
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeView, setActiveView] = useState('dashboard') // dashboard, liste, formular, export, import, admin, fische
+  const [activeView, setActiveView] = useState('dashboard') // dashboard, liste, formular, export, import, admin, fische, terminplan
 
   const [editMember, setEditMember] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -358,6 +359,12 @@ function App() {
                 🐟 Fische
               </button>
             )}
+            <button
+              onClick={() => setActiveView('terminplan')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'terminplan' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              📅 Terminplan
+            </button>
             {isEditor && (
               <button
                 onClick={() => setActiveView('export')}
@@ -391,6 +398,7 @@ function App() {
               {activeView === 'liste' && '📋 Mitgliederliste'}
               {activeView === 'formular' && '✏️ Mitglied'}
               {activeView === 'fische' && '🐟 Fischverwaltung'}
+              {activeView === 'terminplan' && '📅 Terminplan'}
               {activeView === 'export' && '📄 PDF-Export'}
               {activeView === 'import' && '📥 Import'}
               {activeView === 'admin' && '🛠️ Admin'}
@@ -433,6 +441,12 @@ function App() {
                   🐟 Fische
                 </button>
               )}
+              <button
+                onClick={() => { setActiveView('terminplan'); setMobileNavOpen(false) }}
+                className={`w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === 'terminplan' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
+                📅 Terminplan
+              </button>
               {isEditor && (
                 <button
                   onClick={() => { setActiveView('export'); setMobileNavOpen(false) }}
@@ -538,6 +552,10 @@ function App() {
         {activeView === 'dashboard' && <Dashboard />}
 
         {activeView === 'fische' && isEditor && <FischVerwaltung />}
+
+        {activeView === 'terminplan' && (
+          <TerminplanVerwaltung isEditor={isEditor} isAdmin={isAdmin} />
+        )}
 
         {activeView === 'liste' && (
           <>
