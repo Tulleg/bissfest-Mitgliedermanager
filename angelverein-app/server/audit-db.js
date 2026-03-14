@@ -125,6 +125,52 @@ function getAuditLog({ von, bis, aktion, seite = 1 } = {}) {
 }
 
 /**
+ * Alle gefilterten Audit-Einträge ohne Paginierung abrufen (für Export).
+ * @param {object} opts
+ * @param {string} [opts.von] - Startdatum ISO
+ * @param {string} [opts.bis] - Enddatum ISO
+ * @param {string} [opts.aktion] - Aktionstyp-Filter
+ * @returns {object[]}
+ */
+function getAllAuditLog({ von, bis, aktion } = {}) {
+  const bedingungen = [];
+  const params = [];
+
+  if (von) {
+    bedingungen.push('zeitstempel >= ?');
+    params.push(von);
+  }
+  if (bis) {
+    bedingungen.push('zeitstempel < ?');
+    params.push(bis + 'T23:59:59.999Z');
+  }
+  if (aktion) {
+    bedingungen.push('aktion = ?');
+    params.push(aktion);
+  }
+
+  const where = bedingungen.length > 0 ? `WHERE ${bedingungen.join(' AND ')}` : '';
+
+  const eintraege = db.prepare(`
+    SELECT * FROM audit_log ${where}
+    ORDER BY zeitstempel DESC
+  `).all(...params);
+
+  // details-JSON parsen
+  for (const eintrag of eintraege) {
+    if (eintrag.details) {
+      try {
+        eintrag.details = JSON.parse(eintrag.details);
+      } catch {
+        // Bleibt als String
+      }
+    }
+  }
+
+  return eintraege;
+}
+
+/**
  * Alle vorkommenden Aktionstypen abrufen (für Dropdown-Filter im Frontend).
  * @returns {string[]}
  */
@@ -148,6 +194,7 @@ module.exports = {
   initializeAuditDatabase,
   logAktion,
   getAuditLog,
+  getAllAuditLog,
   getAuditAktionen,
   bereinigteEintraege
 };

@@ -74,6 +74,31 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
     }
   }
 
+  // Audit-Log als Datei herunterladen (CSV oder JSON)
+  const exportAuditLog = async (format) => {
+    const params = new URLSearchParams({ format })
+    if (auditFilter.von)    params.set('von', auditFilter.von)
+    if (auditFilter.bis)    params.set('bis', auditFilter.bis)
+    if (auditFilter.aktion) params.set('aktion', auditFilter.aktion)
+
+    try {
+      const res = await fetch(`${API_BASE}/audit/export?${params}`)
+      if (!res.ok) throw new Error('Export fehlgeschlagen')
+
+      // Antwort als Blob (Rohdaten) empfangen und als Download-Link auslösen
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.${format}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Audit-Export Fehler:', err)
+      onNotification('Fehler beim Exportieren des Audit-Logs', 'error')
+    }
+  }
+
   useEffect(() => {
     loadUsers()
     loadAuditAktionen()
@@ -401,6 +426,21 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
                 className="px-3 py-1 text-sm bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
               >
                 Zurücksetzen
+              </button>
+            </div>
+            <div className="self-end flex gap-2 ml-auto">
+              {/* Export-Buttons: aktuelle Filtereinstellungen werden mitgegeben */}
+              <button
+                onClick={() => exportAuditLog('csv')}
+                className="px-3 py-1 text-sm bg-blue-50 border border-blue-300 text-blue-700 rounded hover:bg-blue-100"
+              >
+                CSV exportieren
+              </button>
+              <button
+                onClick={() => exportAuditLog('json')}
+                className="px-3 py-1 text-sm bg-blue-50 border border-blue-300 text-blue-700 rounded hover:bg-blue-100"
+              >
+                JSON exportieren
               </button>
             </div>
           </div>
