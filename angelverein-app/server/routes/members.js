@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 const { requireRole } = require('../middleware/roleCheck');
+const { logAktion } = require('../audit-db');
+
+// Felder die beim Diff ignoriert werden (berechnet oder interne Werte)
+const DIFF_IGNORE = ['alter', 'mitgliedsdauer', 'id', 'erstellt_am', 'aktualisiert_am'];
 
 // GET /api/mitglieder - Alle Mitglieder abrufen
 router.get('/', requireRole('viewer'), (req, res) => {
@@ -96,6 +100,11 @@ router.get('/:id', requireRole('viewer'), (req, res) => {
 router.post('/', requireRole('editor'), (req, res) => {
   try {
     const member = db.createMember(req.body);
+    logAktion(
+      req.session.userId, req.session.username,
+      'MITGLIED_ERSTELLT', 'mitglied', member.id,
+      { name: `${member.nachname || ''}, ${member.vorname || ''}`.trim().replace(/^,\s*/, '') }
+    );
     res.status(201).json(member);
   } catch (error) {
     console.error('Fehler beim Anlegen des Mitglieds:', error);
@@ -111,6 +120,21 @@ router.put('/:id', requireRole('editor'), (req, res) => {
       return res.status(404).json({ fehler: 'Mitglied nicht gefunden' });
     }
     const member = db.updateMember(req.params.id, req.body);
+
+    // Nur tatsächlich geänderte Felder im Log erfassen (Datensparsamkeit)
+    const aenderungen = {};
+    for (const [key, neuWert] of Object.entries(req.body)) {
+      if (DIFF_IGNORE.includes(key)) continue;
+      if (String(existing[key] ?? '') !== String(neuWert ?? '')) {
+        aenderungen[key] = { vorher: existing[key], nachher: neuWert };
+      }
+    }
+    logAktion(
+      req.session.userId, req.session.username,
+      'MITGLIED_GEAENDERT', 'mitglied', Number(req.params.id),
+      Object.keys(aenderungen).length > 0 ? { aenderungen } : null
+    );
+
     res.json(member);
   } catch (error) {
     console.error('Fehler beim Aktualisieren des Mitglieds:', error);
@@ -125,6 +149,11 @@ router.delete('/:id', requireRole('editor'), (req, res) => {
     if (!existing) {
       return res.status(404).json({ fehler: 'Mitglied nicht gefunden' });
     }
+    logAktion(
+      req.session.userId, req.session.username,
+      'MITGLIED_GELOESCHT', 'mitglied', Number(req.params.id),
+      { name: `${existing.nachname || ''}, ${existing.vorname || ''}`.trim().replace(/^,\s*/, '') }
+    );
     db.deleteMember(req.params.id);
     res.json({ nachricht: 'Mitglied gelöscht' });
   } catch (error) {

@@ -5,6 +5,7 @@ const { requireRole } = require('../middleware/roleCheck');
 const path = require('path');
 const fs = require('fs');
 const db = require('../database');
+const { logAktion } = require('../audit-db');
 const excelParser = require('../utils/excelParser');
 const pdfParser = require('../utils/pdfParser');
 
@@ -232,6 +233,12 @@ router.post('/uebernehmen', (req, res) => {
         }
       }
     }
+
+    logAktion(
+      req.session.userId, req.session.username,
+      'IMPORT', 'mitglied', null,
+      { erstellt, aktualisiert }
+    );
 
     res.json({
       nachricht: `${erstellt} neue Mitglieder angelegt, ${aktualisiert} aktualisiert`,

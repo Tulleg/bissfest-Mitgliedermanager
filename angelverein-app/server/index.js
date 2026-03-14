@@ -10,6 +10,7 @@ const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.jso
 const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf-8'));
 const { initializeDatabase, getSpaltenMitSichtbarkeit, setSpaltenSichtbar } = require('./database');
 const { initializeAuthDatabase } = require('./auth-db');
+const { initializeAuditDatabase, bereinigteEintraege } = require('./audit-db');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -98,12 +99,14 @@ const exportRouter = require('./routes/export');
 const importRouter = require('./routes/import');
 const fischeRouter = require('./routes/fische');
 const termineRouter = require('./routes/termine');
+const auditRouter = require('./routes/audit');
 
 app.use('/api/mitglieder', membersRouter);
 app.use('/api/export', exportRouter);
 app.use('/api/import', importRouter);
 app.use('/api/fische', fischeRouter);
 app.use('/api/termine', termineRouter);
+app.use('/api/audit', auditRouter);
 
 // Spalten-Sichtbarkeit ändern (nur für Admins)
 app.put('/api/settings/spalten/:key', (req, res) => {
@@ -156,6 +159,18 @@ app.get('*', (req, res) => {
 // Datenbanken initialisieren und Server starten
 initializeAuthDatabase();
 initializeDatabase();
+initializeAuditDatabase();
+
+// Alte Audit-Einträge (>12 Monate) beim Start bereinigen
+const geloescht = bereinigteEintraege();
+if (geloescht > 0) console.log(`🧹 Audit-Log: ${geloescht} alte Einträge bereinigt`);
+
+// Täglich um 03:00 Uhr bereinigen
+const MS_PRO_TAG = 24 * 60 * 60 * 1000;
+setInterval(() => {
+  const anzahl = bereinigteEintraege();
+  if (anzahl > 0) console.log(`🧹 Audit-Log: ${anzahl} alte Einträge bereinigt`);
+}, MS_PRO_TAG);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🎣 ${config.vereinsname} - Mitgliederverwaltung`);

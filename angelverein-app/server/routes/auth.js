@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const { getUser, getUserById, createUser, createUserWithRole, updateUserPassword, updateUserRole, deleteUser, getAllUsers, countUsers, getUserSpaltenSichtbar, setUserSpaltenSichtbar } = require('../auth-db');
 const { requireRole } = require('../middleware/roleCheck');
+const { logAktion } = require('../audit-db');
 
 // Login
 router.post('/login', async (req, res) => {
@@ -32,6 +33,7 @@ router.post('/login', async (req, res) => {
       if (err) {
         return res.status(500).json({ fehler: 'Session konnte nicht gespeichert werden' });
       }
+      logAktion(user.id, user.username, 'LOGIN', 'benutzer', user.id, null);
       res.json({
         erfolg: true,
         benutzer: {
@@ -49,10 +51,14 @@ router.post('/login', async (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
+  // Session-Daten VOR dem Destroy lesen, danach sind sie weg
+  const userId = req.session.userId;
+  const username = req.session.username;
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ fehler: 'Logout fehlgeschlagen' });
     }
+    logAktion(userId, username, 'LOGOUT', 'benutzer', userId, null);
     res.clearCookie('angelverein.sid');
     res.json({ erfolg: true });
   });
@@ -170,6 +176,8 @@ router.put('/users/:id/passwort', requireRole('admin'), async (req, res) => {
   try {
     const hash = await bcrypt.hash(neuesPasswort, 12);
     updateUserPassword(targetId, hash);
+    // Kein Passwort im Details-Feld!
+    logAktion(req.session.userId, req.session.username, 'BENUTZER_PASSWORT_RESET', 'benutzer', Number(targetId), null);
     res.json({ erfolg: true });
   } catch (err) {
     console.error('Admin Passwort Reset Fehler:', err);
@@ -237,6 +245,7 @@ router.post('/users', requireRole('admin'), async (req, res) => {
     const r = allowedRoles.includes(rolle) ? rolle : 'viewer';
     const hash = await bcrypt.hash(password, 12);
     const user = createUserWithRole(username, hash, r);
+    logAktion(req.session.userId, req.session.username, 'BENUTZER_ERSTELLT', 'benutzer', user.id, { username: user.username, rolle: r });
     res.status(201).json(user);
   } catch (err) {
     console.error('Fehler beim Erstellen des Nutzers:', err);
@@ -251,7 +260,13 @@ router.put('/users/:id/rolle', requireRole('admin'), (req, res) => {
     if (!allowedRoles.includes(rolle)) {
       return res.status(400).json({ fehler: 'Ungültige Rolle' });
     }
+    const zielUser = getUserById(req.params.id);
     updateUserRole(req.params.id, rolle);
+    logAktion(
+      req.session.userId, req.session.username,
+      'BENUTZER_ROLLE_GEAENDERT', 'benutzer', Number(req.params.id),
+      { username: zielUser?.username, vorher: zielUser?.rolle, nachher: rolle }
+    );
     res.json({ erfolg: true });
   } catch (err) {
     console.error('Fehler beim Ändern der Rolle:', err);
@@ -261,7 +276,13 @@ router.put('/users/:id/rolle', requireRole('admin'), (req, res) => {
 
 router.delete('/users/:id', requireRole('admin'), (req, res) => {
   try {
+    const zielUser = getUserById(req.params.id);
     deleteUser(req.params.id);
+    logAktion(
+      req.session.userId, req.session.username,
+      'BENUTZER_GELOESCHT', 'benutzer', Number(req.params.id),
+      { username: zielUser?.username }
+    );
     res.json({ erfolg: true });
   } catch (err) {
     console.error('Fehler beim Löschen des Nutzers:', err);

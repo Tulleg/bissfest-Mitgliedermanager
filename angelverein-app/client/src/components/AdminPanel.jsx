@@ -2,17 +2,87 @@ import { useState, useEffect } from 'react'
 
 const API_BASE = '/api'
 
+// Hilfsfunktion: Details-Objekt aus dem Audit-Log leserlich anzeigen
+function formatDetails(details) {
+  if (!details) return '–'
+  if (typeof details === 'string') return details
+
+  // Massenimport: { erstellt, aktualisiert }
+  if ('erstellt' in details || 'aktualisiert' in details) {
+    return `${details.erstellt ?? 0} erstellt, ${details.aktualisiert ?? 0} aktualisiert`
+  }
+  // Mitglied geändert: { aenderungen: { feld: { vorher, nachher } } }
+  if (details.aenderungen) {
+    return Object.entries(details.aenderungen)
+      .map(([k, v]) => `${k}: ${v.vorher ?? '–'} → ${v.nachher ?? '–'}`)
+      .join(', ')
+  }
+  // Rolle geändert: { vorher, nachher }
+  if ('vorher' in details && 'nachher' in details) {
+    return `${details.vorher} → ${details.nachher}`
+  }
+  // Mitglied erstellt/gelöscht: { name }
+  if (details.name) return details.name
+  // Benutzer erstellt: { username, rolle }
+  if (details.username) return `${details.username}${details.rolle ? ` (${details.rolle})` : ''}`
+  return JSON.stringify(details)
+}
+
 function AdminPanel({ onNotification, spalten, loadConfig }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [newUser, setNewUser] = useState({ username: '', password: '', rolle: 'viewer' })
-  // Welcher Tab gerade aktiv ist: 'benutzer' oder 'spalten'
+  // Welcher Tab gerade aktiv ist: 'benutzer', 'spalten' oder 'audit'
   const [activeTab, setActiveTab] = useState('benutzer')
+
+  // Audit-Log States
+  const [auditLog, setAuditLog] = useState([])
+  const [auditGesamt, setAuditGesamt] = useState(0)
+  const [auditSeiten, setAuditSeiten] = useState(1)
+  const [auditSeite, setAuditSeite] = useState(1)
+  const [auditAktionen, setAuditAktionen] = useState([])
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditFilter, setAuditFilter] = useState({ von: '', bis: '', aktion: '' })
+
+  const loadAuditLog = async () => {
+    setAuditLoading(true)
+    try {
+      const params = new URLSearchParams({ seite: auditSeite })
+      if (auditFilter.von)    params.set('von', auditFilter.von)
+      if (auditFilter.bis)    params.set('bis', auditFilter.bis)
+      if (auditFilter.aktion) params.set('aktion', auditFilter.aktion)
+      const res = await fetch(`${API_BASE}/audit?${params}`)
+      const data = await res.json()
+      setAuditLog(data.eintraege)
+      setAuditGesamt(data.gesamt)
+      setAuditSeiten(data.seiten)
+    } catch (err) {
+      console.error('Fehler beim Laden des Audit-Logs:', err)
+      onNotification('Fehler beim Laden des Audit-Logs', 'error')
+    }
+    setAuditLoading(false)
+  }
+
+  const loadAuditAktionen = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/audit/aktionen`)
+      const data = await res.json()
+      setAuditAktionen(data)
+    } catch (err) {
+      console.error('Fehler beim Laden der Audit-Aktionen:', err)
+    }
+  }
 
   useEffect(() => {
     loadUsers()
+    loadAuditAktionen()
   }, [])
+
+  // Audit-Log neu laden wenn Tab aktiv oder Filter/Seite ändert
+  useEffect(() => {
+    if (activeTab === 'audit') loadAuditLog()
+  }, [activeTab, auditSeite, auditFilter])
 
   const loadUsers = async () => {
     setLoading(true)
@@ -169,6 +239,16 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
         >
           Spalten-Anzeige
         </button>
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === 'audit'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Audit-Log
+        </button>
       </div>
 
       {/* Tab: Benutzerverwaltung */}
@@ -272,6 +352,121 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Tab: Audit-Log */}
+      {activeTab === 'audit' && (
+        <div>
+          <p className="text-sm text-gray-500 mb-4">
+            Alle Änderungen werden hier protokolliert. Einträge werden 12 Monate aufbewahrt.
+          </p>
+
+          {/* Filterzeile */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Von</label>
+              <input
+                type="date"
+                value={auditFilter.von}
+                onChange={e => { setAuditSeite(1); setAuditFilter(f => ({ ...f, von: e.target.value })) }}
+                className="px-2 py-1 border border-gray-300 rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Bis</label>
+              <input
+                type="date"
+                value={auditFilter.bis}
+                onChange={e => { setAuditSeite(1); setAuditFilter(f => ({ ...f, bis: e.target.value })) }}
+                className="px-2 py-1 border border-gray-300 rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Aktion</label>
+              <select
+                value={auditFilter.aktion}
+                onChange={e => { setAuditSeite(1); setAuditFilter(f => ({ ...f, aktion: e.target.value })) }}
+                className="px-2 py-1 border border-gray-300 rounded text-sm"
+              >
+                <option value="">Alle</option>
+                {auditAktionen.map(a => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </div>
+            <div className="self-end">
+              <button
+                onClick={() => { setAuditSeite(1); setAuditFilter({ von: '', bis: '', aktion: '' }) }}
+                className="px-3 py-1 text-sm bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
+              >
+                Zurücksetzen
+              </button>
+            </div>
+          </div>
+
+          {/* Tabelle */}
+          {auditLoading ? (
+            <div className="text-sm text-gray-500">Lade…</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border">
+                <thead>
+                  <tr className="bg-gray-50 text-left">
+                    <th className="px-3 py-2 whitespace-nowrap">Zeitstempel</th>
+                    <th className="px-3 py-2">Benutzer</th>
+                    <th className="px-3 py-2">Aktion</th>
+                    <th className="px-3 py-2">Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLog.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-4 text-center text-gray-400">Keine Einträge gefunden</td>
+                    </tr>
+                  ) : auditLog.map(eintrag => (
+                    <tr key={eintrag.id} className="border-t hover:bg-gray-50">
+                      <td className="px-3 py-2 whitespace-nowrap text-gray-500 text-xs">
+                        {new Date(eintrag.zeitstempel).toLocaleString('de-DE')}
+                      </td>
+                      <td className="px-3 py-2">{eintrag.benutzername ?? '–'}</td>
+                      <td className="px-3 py-2">
+                        <span className="font-mono text-xs bg-gray-100 px-1 py-0.5 rounded">
+                          {eintrag.aktion}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600 max-w-xs truncate" title={typeof eintrag.details === 'object' ? JSON.stringify(eintrag.details) : eintrag.details}>
+                        {formatDetails(eintrag.details)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Paginierung */}
+          {auditSeiten > 1 && (
+            <div className="flex items-center gap-3 mt-4 text-sm">
+              <button
+                onClick={() => setAuditSeite(s => Math.max(1, s - 1))}
+                disabled={auditSeite <= 1}
+                className="px-3 py-1 border rounded disabled:opacity-40"
+              >
+                &lsaquo; Zurück
+              </button>
+              <span className="text-gray-600">
+                Seite {auditSeite} von {auditSeiten} ({auditGesamt} Einträge)
+              </span>
+              <button
+                onClick={() => setAuditSeite(s => Math.min(auditSeiten, s + 1))}
+                disabled={auditSeite >= auditSeiten}
+                className="px-3 py-1 border rounded disabled:opacity-40"
+              >
+                Weiter &rsaquo;
+              </button>
+            </div>
+          )}
         </div>
       )}
 
