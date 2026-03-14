@@ -195,4 +195,24 @@ Fragen oder Fehler? Erstelle ein [GitHub Issue](https://github.com/deinusername/
 
 ---
 
+🔒 Datenschutz & DSGVO-Hinweise
+Diese Software speichert personenbezogene Daten (Mitgliederdaten). Der Betreiber ist gemäß DSGVO Art. 4 Nr. 7 selbst verantwortlich für den datenschutzkonformen Betrieb.
+Pflichten des Betreibers
+HTTPS ist zwingend erforderlich.
+Ohne verschlüsselte Verbindung dürfen keine personenbezogenen Daten übertragen werden. Empfohlene Lösungen:
+
+Caddy – automatisches Let's Encrypt, minimale Konfiguration
+Nginx + Certbot
+Cloudflare Tunnel
+
+Weitere Betreiberpflichten:
+
+Verarbeitungsverzeichnis nach Art. 30 DSGVO führen
+Auftragsverarbeitungsvertrag (AVV) mit dem Hoster abschließen
+Regelmäßige Backups der Datenbank (data/-Verzeichnis)
+Zugriff auf den Server auf autorisierte Personen beschränken
+
+Haftungsausschluss
+Diese Software wird unter der MIT-Lizenz bereitgestellt. Der Entwickler übernimmt keine Haftung für datenschutzrechtliche Verstöße die durch unsachgemäßen Betrieb entstehen.
+
 **Tight Lines! 🎣**
