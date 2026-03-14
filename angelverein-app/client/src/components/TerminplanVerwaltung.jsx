@@ -190,6 +190,35 @@ export default function TerminplanVerwaltung({ isEditor, isAdmin }) {
     }
   };
 
+  // Termine aus dem Vorjahr übernehmen
+  const handleVorjahrUebernehmen = async () => {
+    const vorjahr = gewaehlteJahr - 1;
+    const hinweis = termine.length > 0
+      ? `Es sind bereits ${termine.length} Termin${termine.length !== 1 ? 'e' : ''} für ${gewaehlteJahr} vorhanden.\nDie Termine aus ${vorjahr} werden ZUSÄTZLICH hinzugefügt.\n\nFortfahren?`
+      : `Alle Termine aus ${vorjahr} werden nach ${gewaehlteJahr} übernommen (Daten um 1 Jahr verschoben).\n\nFortfahren?`;
+
+    if (!confirm(hinweis)) return;
+
+    try {
+      const res = await fetch(`/api/termine/kopieren/${vorjahr}/${gewaehlteJahr}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.fehler || 'Fehler beim Übernehmen.');
+
+      setTermine(d.termine);
+      // Zieljahr in der Jahresliste ergänzen, falls noch nicht vorhanden
+      setJahre(j => {
+        const vorhanden = j.find(jj => jj.jahr === gewaehlteJahr);
+        if (vorhanden) return j;
+        return [...j, { jahr: gewaehlteJahr, status: 'entwurf', freigegeben_am: null }].sort((a, b) => b.jahr - a.jahr);
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   // PDF herunterladen
   const handlePdfExport = () => {
     window.open(`/api/termine/export/pdf/${gewaehlteJahr}`, '_blank');
@@ -303,14 +332,25 @@ export default function TerminplanVerwaltung({ isEditor, isAdmin }) {
 
           {/* Termin hinzufügen */}
           {isEditor && (
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-2 flex-wrap">
               <span className="text-sm text-gray-500">{termine.length} Termin{termine.length !== 1 ? 'e' : ''}</span>
-              <button
-                onClick={handleNeuOeffnen}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium"
-              >
-                + Termin hinzufügen
-              </button>
+              <div className="flex gap-2">
+                {status === 'entwurf' && (
+                  <button
+                    onClick={handleVorjahrUebernehmen}
+                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 border border-gray-300"
+                    title={`Termine aus ${gewaehlteJahr - 1} übernehmen`}
+                  >
+                    ↩ Aus {gewaehlteJahr - 1} übernehmen
+                  </button>
+                )}
+                <button
+                  onClick={handleNeuOeffnen}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  + Termin hinzufügen
+                </button>
+              </div>
             </div>
           )}
 

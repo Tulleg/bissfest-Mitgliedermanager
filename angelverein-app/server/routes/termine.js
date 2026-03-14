@@ -65,6 +65,40 @@ router.get('/export/pdf/:jahr', requireRole('viewer'), async (req, res) => {
   }
 });
 
+// POST /api/termine/kopieren/:vonJahr/:nachJahr
+// Termine eines Jahres in ein anderes Jahr kopieren (Daten um +1 Jahr verschoben)
+router.post('/kopieren/:vonJahr/:nachJahr', requireRole('editor'), (req, res) => {
+  try {
+    const vonJahr = parseInt(req.params.vonJahr, 10);
+    const nachJahr = parseInt(req.params.nachJahr, 10);
+
+    if (isNaN(vonJahr) || isNaN(nachJahr)) {
+      return res.status(400).json({ fehler: 'Ungültige Jahreszahl.' });
+    }
+    if (vonJahr === nachJahr) {
+      return res.status(400).json({ fehler: 'Quell- und Zieljahr dürfen nicht gleich sein.' });
+    }
+
+    const kopiertAnzahl = db.kopierTermineVonJahr(vonJahr, nachJahr);
+    if (kopiertAnzahl === 0) {
+      return res.status(404).json({ fehler: `Keine Termine im Jahr ${vonJahr} gefunden.` });
+    }
+
+    // Zieljahr als Entwurf anlegen, falls noch kein Status-Eintrag existiert
+    const statusEintrag = db.getTerminplanStatus(nachJahr);
+    if (!statusEintrag) {
+      db.setTerminplanStatus(nachJahr, 'entwurf');
+    }
+
+    // Alle neuen Termine des Zieljahres zurückgeben
+    const termine = db.getAllTermine(nachJahr);
+    res.json({ kopiertAnzahl, termine });
+  } catch (error) {
+    console.error('Fehler beim Kopieren der Termine:', error);
+    res.status(500).json({ fehler: 'Termine konnten nicht kopiert werden.' });
+  }
+});
+
 // GET /api/termine/:jahr
 // Alle Termine eines Jahres
 router.get('/:jahr', requireRole('viewer'), (req, res) => {

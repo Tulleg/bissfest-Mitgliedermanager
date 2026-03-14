@@ -629,6 +629,44 @@ function setTerminplanStatus(jahr, status) {
   return db.prepare('SELECT * FROM terminplan_jahre WHERE jahr = ?').get(jahr);
 }
 
+// Termine eines Jahres in ein anderes Jahr kopieren (Datum wird um +1 Jahr verschoben)
+function kopierTermineVonJahr(vonJahr, nachJahr) {
+  const quellTermine = db.prepare(
+    'SELECT * FROM termine WHERE jahr = ? ORDER BY datum, reihenfolge'
+  ).all(vonJahr);
+
+  if (quellTermine.length === 0) return 0;
+
+  // Hilfsfunktion: Jahreszahl im ISO-Datum ersetzen, z.B. "2026-04-15" → "2027-04-15"
+  const verschiebeJahr = (isoDate, zielJahr) => {
+    if (!isoDate) return null;
+    return `${zielJahr}${isoDate.slice(4)}`;
+  };
+
+  const insert = db.prepare(`
+    INSERT INTO termine (jahr, datum, ausweichtermin, uhrzeit, ort, beschreibung, reihenfolge)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  // Alle Termine in einer Transaktion einfügen (schneller und sicher)
+  const alleEinfuegen = db.transaction((termine) => {
+    for (const t of termine) {
+      insert.run(
+        nachJahr,
+        verschiebeJahr(t.datum, nachJahr),
+        verschiebeJahr(t.ausweichtermin, nachJahr),
+        t.uhrzeit || null,
+        t.ort || null,
+        t.beschreibung || null,
+        t.reihenfolge || 0
+      );
+    }
+  });
+
+  alleEinfuegen(quellTermine);
+  return quellTermine.length;
+}
+
 // Alle Jahre mit Status – plus Jahre die Termine haben aber noch keinen Status-Eintrag
 function getAllTerminplanJahre() {
   // Jahre aus der terminplan_jahre-Tabelle
@@ -709,5 +747,6 @@ module.exports = {
   deleteTermin,
   getTerminplanStatus,
   setTerminplanStatus,
-  getAllTerminplanJahre
+  getAllTerminplanJahre,
+  kopierTermineVonJahr
 };
