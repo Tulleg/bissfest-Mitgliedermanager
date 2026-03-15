@@ -1,6 +1,6 @@
 {
   "name": "angelverein-app",
-  "version": "0.2.3-beta",
+  "version": "0.2.4-beta",
   "description": "Mitgliederverwaltung für Angelverein",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3-multiple-ciphers": "^9.1.1",
     "concurrently": "^8.2.2",
     "connect-sqlite3": "^0.9.15",
     "cors": "^2.8.5",

@@ -1,4 +1,4 @@
-const Database = require('better-sqlite3');
+const Database = require('better-sqlite3-multiple-ciphers');
 const path = require('path');
 const fs = require('fs');
 
@@ -14,7 +14,15 @@ if (!fs.existsSync(dataDir)) {
 
 const db = new Database(dbPath);
 
-// WAL-Modus für bessere Performance
+// Datenbank entschlüsseln – MUSS vor allen anderen Abfragen kommen!
+const dbPassword = process.env.DB_PASSWORD;
+if (!dbPassword) {
+  console.error('FEHLER: DB_PASSWORD Umgebungsvariable nicht gesetzt!');
+  process.exit(1);
+}
+db.pragma(`key='${dbPassword}'`);
+
+// WAL-Modus für bessere Performance – erst NACH dem Key-Pragma
 db.pragma('journal_mode = WAL');
 
 // Berechnet das Alter aus einem Geburtsdatum (YYYY-MM-DD).
