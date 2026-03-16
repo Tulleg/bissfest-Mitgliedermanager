@@ -7,6 +7,7 @@ function ExportDialog({ spalten, vereinsname }) {
   const [vorlagen, setVorlagen] = useState([])
   const [selectedVorlage, setSelectedVorlage] = useState(null)
   const [showNewForm, setShowNewForm] = useState(false)
+  const [editiereVorlageId, setEditiereVorlageId] = useState(null) // null = neue Vorlage, Zahl = Bearbeiten
   const [loading, setLoading] = useState(false)
   const [newVorlage, setNewVorlage] = useState({
     name: '',
@@ -83,27 +84,53 @@ function ExportDialog({ spalten, vereinsname }) {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/export/vorlagen`, {
-        method: 'POST',
+      // Bearbeiten-Modus: PUT, sonst neu erstellen: POST
+      const url = editiereVorlageId
+        ? `${API_BASE}/export/vorlagen/${editiereVorlageId}`
+        : `${API_BASE}/export/vorlagen`
+      const method = editiereVorlageId ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newVorlage)
       })
 
       if (res.ok) {
         loadVorlagen()
-        setShowNewForm(false)
-        setNewVorlage({
-          name: '',
-          ueberschrift: '',
-          felder: [],
-          filter: {},
-          zeigeAnzahl: true,
-          zeigeDatum: true
-        })
+        handleAbbrechen()
       }
     } catch (err) {
       alert('Fehler beim Speichern: ' + err.message)
     }
+  }
+
+  // Vorlage zum Bearbeiten öffnen – Formular mit bestehenden Daten vorbelegen
+  const handleEditVorlage = (vorlage) => {
+    setNewVorlage({
+      name: vorlage.name,
+      ueberschrift: vorlage.ueberschrift || '',
+      felder: vorlage.felder,
+      filter: vorlage.filter || {},
+      zeigeAnzahl: vorlage.zeigeAnzahl,
+      zeigeDatum: vorlage.zeigeDatum
+    })
+    setEditiereVorlageId(vorlage.id)
+    setShowNewForm(true)
+  }
+
+  // Formular komplett zurücksetzen (Abbrechen oder nach Speichern)
+  const handleAbbrechen = () => {
+    setShowNewForm(false)
+    setEditiereVorlageId(null)
+    setNewVorlage({
+      name: '',
+      ueberschrift: '',
+      felder: [],
+      filter: {},
+      zeigeAnzahl: true,
+      zeigeDatum: true
+    })
   }
 
   const handleDeleteVorlage = async (id) => {
@@ -133,7 +160,7 @@ function ExportDialog({ spalten, vereinsname }) {
         <div className="px-6 py-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-800">📄 PDF-Export Vorlagen</h2>
           <button
-            onClick={() => setShowNewForm(!showNewForm)}
+            onClick={() => showNewForm ? handleAbbrechen() : setShowNewForm(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             {showNewForm ? 'Abbrechen' : '+ Neue Vorlage'}
@@ -183,6 +210,13 @@ function ExportDialog({ spalten, vereinsname }) {
                     {loading ? '⏳' : '📥'} PDF erstellen
                   </button>
                   <button
+                    onClick={() => handleEditVorlage(vorlage)}
+                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                    title="Vorlage bearbeiten"
+                  >
+                    ✏️
+                  </button>
+                  <button
                     onClick={() => handleDeleteVorlage(vorlage.id)}
                     className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                     title="Vorlage löschen"
@@ -200,7 +234,9 @@ function ExportDialog({ spalten, vereinsname }) {
       {showNewForm && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b">
-            <h2 className="text-lg font-semibold text-gray-800">Neue Export-Vorlage</h2>
+            <h2 className="text-lg font-semibold text-gray-800">
+              {editiereVorlageId ? 'Vorlage bearbeiten' : 'Neue Export-Vorlage'}
+            </h2>
           </div>
           <div className="p-6 space-y-4">
             {/* Name und Überschrift */}
@@ -353,10 +389,10 @@ function ExportDialog({ spalten, vereinsname }) {
                 disabled={!newVorlage.name || newVorlage.felder.length === 0}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
               >
-                💾 Vorlage speichern
+                {editiereVorlageId ? '💾 Änderungen speichern' : '💾 Vorlage speichern'}
               </button>
               <button
-                onClick={() => setShowNewForm(false)}
+                onClick={handleAbbrechen}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm"
               >
                 Abbrechen
