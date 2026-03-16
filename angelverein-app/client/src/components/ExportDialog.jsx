@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { blobAlsDateiSpeichern } from '../utils/downloadHelper'
 
 const API_BASE = '/api'
 
@@ -30,13 +31,16 @@ function ExportDialog({ spalten, vereinsname }) {
     }
   }
 
-  const handleExportPDF = async (vorlageId) => {
+  // Gemeinsame Funktion für beide Export-Wege.
+  // body: entweder { vorlagenId } oder { customConfig } – je nach Export-Art
+  // dateiname: der vorgeschlagene Dateiname für den Download
+  const exportierePDF = async (body, dateiname) => {
     setLoading(true)
     try {
       const res = await fetch(`${API_BASE}/export/pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vorlagenId: vorlageId })
+        body: JSON.stringify(body)
       })
 
       if (!res.ok) {
@@ -50,60 +54,26 @@ function ExportDialog({ spalten, vereinsname }) {
         throw new Error('Server hat kein PDF zurückgegeben: ' + text)
       }
 
-      // PDF herunterladen
       const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `export_${Date.now()}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      blobAlsDateiSpeichern(blob, dateiname)
     } catch (err) {
       alert('Fehler beim Export: ' + err.message)
     }
     setLoading(false)
   }
 
-  const handleCustomExport = async () => {
+  // Export einer gespeicherten Vorlage
+  const handleExportPDF = (vorlageId) => {
+    exportierePDF({ vorlagenId: vorlageId }, `export_${Date.now()}.pdf`)
+  }
+
+  // Export mit benutzerdefinierter Konfiguration
+  const handleCustomExport = () => {
     if (newVorlage.felder.length === 0) {
       alert('Bitte mindestens ein Feld auswählen')
       return
     }
-
-    setLoading(true)
-    try {
-      const res = await fetch(`${API_BASE}/export/pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customConfig: newVorlage })
-      })
-
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.fehler || 'Export fehlgeschlagen')
-      }
-
-      const contentType2 = res.headers.get('Content-Type') || ''
-      if (!contentType2.includes('application/pdf')) {
-        const text = await res.text()
-        throw new Error('Server hat kein PDF zurückgegeben: ' + text)
-      }
-
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${newVorlage.name || 'export'}_${Date.now()}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (err) {
-      alert('Fehler beim Export: ' + err.message)
-    }
-    setLoading(false)
+    exportierePDF({ customConfig: newVorlage }, `${newVorlage.name || 'export'}_${Date.now()}.pdf`)
   }
 
   const handleSaveVorlage = async () => {

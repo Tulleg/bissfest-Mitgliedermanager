@@ -105,7 +105,6 @@ router.post('/setup', async (req, res) => {
     }
 
     const hash = await bcrypt.hash(password, 12);
-    console.log('Generated hash for setup:', hash);
     // erster Nutzer immer Admin
     const user = createUserWithRole(username, hash, 'admin');
 
@@ -151,6 +150,10 @@ router.post('/passwort-aendern', async (req, res) => {
     }
 
     const user = getUser(req.session.username);
+    // Sicherheitscheck: Benutzer könnte in der Zwischenzeit gelöscht worden sein
+    if (!user) {
+      return res.status(401).json({ fehler: 'Benutzer nicht gefunden' });
+    }
     const valid = await bcrypt.compare(altesPasswort, user.password_hash);
     if (!valid) {
       return res.status(401).json({ fehler: 'Altes Passwort ist falsch' });

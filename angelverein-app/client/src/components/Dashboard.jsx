@@ -1,29 +1,5 @@
 import { useEffect, useState } from 'react';
-
-// Wandelt ein ISO-Datum (z.B. "1976-03-15") in deutsches Format um: "15.03."
-const formatDatum = (isoString) => {
-  if (!isoString) return '';
-  const d = new Date(isoString);
-  const tag = String(d.getDate()).padStart(2, '0');
-  const monat = String(d.getMonth() + 1).padStart(2, '0');
-  return `${tag}.${monat}.`;
-};
-
-// ISO-Datum → "10. Januar 2026"
-const formatTerminDatum = (isoString) => {
-  if (!isoString) return '';
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
-};
-
-// ISO-Datum → Wochentag
-const getWochentag = (isoString) => {
-  if (!isoString) return '';
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { weekday: 'long' });
-};
+import { formatDatumKurz, formatDatumLang, getWochentag } from '../utils/datumHelpers';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -122,7 +98,7 @@ export default function Dashboard() {
             {naechsteTermine.map((termin) => (
               <div key={termin.id} className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-2">
                 <div className="flex-shrink-0">
-                  <div className="text-base font-bold text-cyan-800">{formatTerminDatum(termin.datum)}</div>
+                  <div className="text-base font-bold text-cyan-800">{formatDatumLang(termin.datum)}</div>
                   <div className="text-xs text-cyan-600">{getWochentag(termin.datum)}{termin.uhrzeit ? ` · ${termin.uhrzeit}` : ''}</div>
                 </div>
                 <div className="sm:ml-4 flex-1">
@@ -150,7 +126,7 @@ export default function Dashboard() {
                   {[...jubilare.geburtstage].sort((a, b) => b.jahre - a.jahre).map((j, i) => (
                     <li key={i} className="text-sm text-pink-900">
                       {j.vorname} {j.nachname} – <span className="font-semibold">{j.jahre} Jahre</span>
-                      {j.datum && <span className="text-pink-500 ml-1">({formatDatum(j.datum)})</span>}
+                      {j.datum && <span className="text-pink-500 ml-1">({formatDatumKurz(j.datum)})</span>}
                     </li>
                   ))}
                 </ul>
@@ -167,7 +143,7 @@ export default function Dashboard() {
                   {[...jubilare.mitgliedschaften].sort((a, b) => b.jahre - a.jahre).map((j, i) => (
                     <li key={i} className="text-sm text-indigo-900">
                       {j.vorname} {j.nachname} – <span className="font-semibold">{j.jahre} Jahre Mitglied</span>
-                      {j.datum && <span className="text-indigo-500 ml-1">({formatDatum(j.datum)})</span>}
+                      {j.datum && <span className="text-indigo-500 ml-1">({formatDatumKurz(j.datum)})</span>}
                     </li>
                   ))}
                 </ul>

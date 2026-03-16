@@ -66,9 +66,11 @@ function ImportDialog({ spalten, onImportComplete }) {
 
       const ergebnis = await res.json()
       setAbgleichErgebnis(ergebnis)
-      // Standardmäßig alle neuen und Updates auswählen
-      setSelectedNeu(ergebnis.neu.map((_, i) => i))
-      setSelectedUpdates(ergebnis.unterschiede.map((_, i) => i))
+      // Standardmäßig alle neuen und Updates auswählen.
+      // Wir speichern den stabilen Bezeichner (abgleichFeld-Wert bzw. DB-id),
+      // nicht den Array-Index – so bleibt die Auswahl auch bei Sortierungen korrekt.
+      setSelectedNeu(ergebnis.neu.map(entry => entry[abgleichFeld]))
+      setSelectedUpdates(ergebnis.unterschiede.map(diff => diff.id))
       setStep('abgleich')
     } catch (err) {
       alert('Fehler beim Abgleich: ' + err.message)
@@ -82,11 +84,13 @@ function ImportDialog({ spalten, onImportComplete }) {
 
     setProcessing(true)
     try {
-      const neueEintraege = selectedNeu.map(i => abgleichErgebnis.neu[i])
-      const aktualisierungen = selectedUpdates.map(i => ({
-        id: abgleichErgebnis.unterschiede[i].id,
-        daten: abgleichErgebnis.unterschiede[i].importierteDaten
-      }))
+      // Nur die ausgewählten Einträge übernehmen – per stabilem Key filtern
+      const neueEintraege = abgleichErgebnis.neu.filter(
+        entry => selectedNeu.includes(entry[abgleichFeld])
+      )
+      const aktualisierungen = abgleichErgebnis.unterschiede
+        .filter(diff => selectedUpdates.includes(diff.id))
+        .map(diff => ({ id: diff.id, daten: diff.importierteDaten }))
 
       const res = await fetch(`${API_BASE}/import/uebernehmen`, {
         method: 'POST',
@@ -314,15 +318,15 @@ function ImportDialog({ spalten, onImportComplete }) {
                 <p className="text-sm text-gray-500">Diese Mitglieder existieren, haben aber abweichende Daten</p>
               </div>
               <div className="divide-y max-h-96 overflow-y-auto">
-                {abgleichErgebnis.unterschiede.map((diff, idx) => (
-                  <div key={idx} className="px-6 py-3">
+                {abgleichErgebnis.unterschiede.map((diff) => (
+                  <div key={diff.id} className="px-6 py-3">
                     <label className="flex items-start gap-3">
                       <input
                         type="checkbox"
-                        checked={selectedUpdates.includes(idx)}
+                        checked={selectedUpdates.includes(diff.id)}
                         onChange={() => {
                           setSelectedUpdates(prev =>
-                            prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+                            prev.includes(diff.id) ? prev.filter(id => id !== diff.id) : [...prev, diff.id]
                           )
                         }}
                         className="mt-1 w-4 h-4 text-blue-600 rounded"
@@ -360,15 +364,16 @@ function ImportDialog({ spalten, onImportComplete }) {
                 <p className="text-sm text-gray-500">Diese Einträge sind nicht in der Mitgliederliste</p>
               </div>
               <div className="divide-y max-h-96 overflow-y-auto">
-                {abgleichErgebnis.neu.map((entry, idx) => (
-                  <div key={idx} className="px-6 py-3">
+                {abgleichErgebnis.neu.map((entry) => (
+                  <div key={entry[abgleichFeld]} className="px-6 py-3">
                     <label className="flex items-start gap-3">
                       <input
                         type="checkbox"
-                        checked={selectedNeu.includes(idx)}
+                        checked={selectedNeu.includes(entry[abgleichFeld])}
                         onChange={() => {
+                          const key = entry[abgleichFeld]
                           setSelectedNeu(prev =>
-                            prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+                            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
                           )
                         }}
                         className="mt-1 w-4 h-4 text-blue-600 rounded"

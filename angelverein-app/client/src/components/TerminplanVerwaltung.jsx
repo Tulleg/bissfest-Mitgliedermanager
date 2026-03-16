@@ -1,20 +1,5 @@
 import { useState, useEffect } from 'react';
-
-// Hilfsfunktion: ISO-Datum → "10. Januar 2026"
-const formatDatumLang = (isoDate) => {
-  if (!isoDate) return '';
-  const d = new Date(isoDate);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
-};
-
-// Hilfsfunktion: ISO-Datum → Wochentag
-const getWochentag = (isoDate) => {
-  if (!isoDate) return '';
-  const d = new Date(isoDate);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('de-DE', { weekday: 'long' });
-};
+import { formatDatumLang, getWochentag } from '../utils/datumHelpers';
 
 // Leeres Formular
 const leererTermin = {

@@ -25,35 +25,31 @@ db.pragma(`key='${dbPassword}'`);
 // WAL-Modus für bessere Performance – erst NACH dem Key-Pragma
 db.pragma('journal_mode = WAL');
 
-// Berechnet das Alter aus einem Geburtsdatum (YYYY-MM-DD).
+// Gemeinsame Hilfsfunktion: Berechnet wie viele volle Jahre zwischen einem Datum und heute liegen.
+// Berücksichtigt ob der Jahrestag in diesem Jahr schon erreicht wurde.
 // Gibt null zurück wenn kein oder ungültiges Datum übergeben wird.
+function berechneJahreDifferenz(datumString) {
+  if (!datumString) return null;
+  const datum = new Date(datumString);
+  if (isNaN(datum.getTime())) return null;
+  const heute = new Date();
+  let jahre = heute.getFullYear() - datum.getFullYear();
+  // Prüfen ob der Jahrestag dieses Jahr noch nicht war – dann ein Jahr abziehen
+  const jahrestag = new Date(heute.getFullYear(), datum.getMonth(), datum.getDate());
+  if (heute < jahrestag) jahre--;
+  return jahre;
+}
+
+// Berechnet das Alter in Jahren aus einem Geburtsdatum (YYYY-MM-DD).
 // Das Alter wird nicht in der DB gespeichert, sondern bei jeder Abfrage frisch berechnet,
 // damit es immer aktuell ist – auch wenn kein Update am Mitglied gemacht wurde.
 function berechneAlter(geburtsdatum) {
-  if (!geburtsdatum) return null;
-  const geb = new Date(geburtsdatum);
-  if (isNaN(geb.getTime())) return null;
-  const heute = new Date();
-  let alter = heute.getFullYear() - geb.getFullYear();
-  // Prüfen ob der Geburtstag dieses Jahr noch nicht war – dann ein Jahr abziehen
-  const geburtstagDiesesJahr = new Date(heute.getFullYear(), geb.getMonth(), geb.getDate());
-  if (heute < geburtstagDiesesJahr) alter--;
-  return alter;
+  return berechneJahreDifferenz(geburtsdatum);
 }
 
 // Berechnet die Mitgliedsdauer in Jahren aus dem Eintrittsdatum (av).
-// Gibt null zurück wenn kein oder ungültiges Datum übergeben wird.
-// Funktioniert analog zu berechneAlter() – berücksichtigt ob das Jubiläum schon war.
 function berechneMitgliedsdauer(av) {
-  if (!av) return null;
-  const eintrittsDatum = new Date(av);
-  if (isNaN(eintrittsDatum.getTime())) return null;
-  const heute = new Date();
-  let jahre = heute.getFullYear() - eintrittsDatum.getFullYear();
-  // Prüfen ob das Jubiläum dieses Jahr noch nicht war – dann ein Jahr abziehen
-  const jubilaeum = new Date(heute.getFullYear(), eintrittsDatum.getMonth(), eintrittsDatum.getDate());
-  if (heute < jubilaeum) jahre--;
-  return jahre;
+  return berechneJahreDifferenz(av);
 }
 
 // Hängt das berechnete Alter und die Mitgliedsdauer an ein Mitglied-Objekt an.

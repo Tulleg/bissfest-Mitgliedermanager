@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { blobAlsDateiSpeichern } from '../utils/downloadHelper'
 
 const API_BASE = '/api'
 
@@ -35,6 +36,14 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
   const [newUser, setNewUser] = useState({ username: '', password: '', rolle: 'viewer' })
   // Welcher Tab gerade aktiv ist: 'benutzer', 'spalten' oder 'audit'
   const [activeTab, setActiveTab] = useState('benutzer')
+
+  // Passwort-Modal: null = geschlossen, { id, username } = offen
+  const [passwortModal, setPasswortModal] = useState(null)
+  const [neuesPasswort, setNeuesPasswort] = useState('')
+
+  // Rollen-Modal: null = geschlossen, { id, username, rolle } = offen
+  const [rolleModal, setRolleModal] = useState(null)
+  const [gewaehlteRolle, setGewaehlteRolle] = useState('')
 
   // Audit-Log States
   const [auditLog, setAuditLog] = useState([])
@@ -87,12 +96,7 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
 
       // Antwort als Blob (Rohdaten) empfangen und als Download-Link auslösen
       const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.${format}`
-      a.click()
-      URL.revokeObjectURL(url)
+      blobAlsDateiSpeichern(blob, `audit-log-${new Date().toISOString().slice(0, 10)}.${format}`)
     } catch (err) {
       console.error('Audit-Export Fehler:', err)
       onNotification('Fehler beim Exportieren des Audit-Logs', 'error')
@@ -150,48 +154,53 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
     }
   }
 
-  const changePassword = async (user) => {
-    const pwd = prompt(`Neues Passwort für ${user.username} (mind. 6 Zeichen)`)
-    if (!pwd) return
-    if (pwd.length < 6) {
-      onNotification('Passwort zu kurz', 'error')
+  // Öffnet das Passwort-Modal für einen Benutzer
+  const changePassword = (user) => {
+    setNeuesPasswort('')
+    setPasswortModal({ id: user.id, username: user.username })
+  }
+
+  // Speichert das neue Passwort aus dem Modal
+  const handlePasswortSpeichern = async () => {
+    if (neuesPasswort.length < 6) {
+      onNotification('Passwort muss mindestens 6 Zeichen lang sein', 'error')
       return
     }
     try {
-      const res = await fetch(`${API_BASE}/auth/users/${user.id}/passwort`, {
+      const res = await fetch(`${API_BASE}/auth/users/${passwortModal.id}/passwort`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ neuesPasswort: pwd })
+        body: JSON.stringify({ neuesPasswort })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.fehler || 'Fehler')
       onNotification('Passwort zurückgesetzt')
+      setPasswortModal(null)
     } catch (err) {
       onNotification(err.message, 'error')
     }
   }
 
-  const changeRole = async (user) => {
-    const rolle = prompt(
-      `Rolle für ${user.username} (viewer, editor, admin):`,
-      user.rolle
-    )
-    if (!rolle) return
-    if (!['viewer', 'editor', 'admin'].includes(rolle)) {
-      onNotification('Ungültige Rolle', 'error')
-      return
-    }
+  // Öffnet das Rollen-Modal für einen Benutzer
+  const changeRole = (user) => {
+    setGewaehlteRolle(user.rolle)
+    setRolleModal({ id: user.id, username: user.username })
+  }
+
+  // Speichert die neue Rolle aus dem Modal
+  const handleRolleSpeichern = async () => {
     try {
-      const res = await fetch(`${API_BASE}/auth/users/${user.id}/rolle`, {
+      const res = await fetch(`${API_BASE}/auth/users/${rolleModal.id}/rolle`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rolle })
+        body: JSON.stringify({ rolle: gewaehlteRolle })
       })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.fehler || 'Fehler')
       }
       onNotification('Rolle aktualisiert')
+      setRolleModal(null)
       loadUsers()
     } catch (err) {
       onNotification(err.message, 'error')
@@ -542,6 +551,70 @@ function AdminPanel({ onNotification, spalten, loadConfig }) {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Passwort zurücksetzen */}
+      {passwortModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Passwort für {passwortModal.username}</h3>
+            <input
+              type="password"
+              placeholder="Neues Passwort (mind. 6 Zeichen)"
+              value={neuesPasswort}
+              onChange={e => setNeuesPasswort(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handlePasswortSpeichern()}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setPasswortModal(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handlePasswortSpeichern}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              >
+                Speichern
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Rolle ändern */}
+      {rolleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Rolle für {rolleModal.username}</h3>
+            <select
+              value={gewaehlteRolle}
+              onChange={e => setGewaehlteRolle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
+            >
+              <option value="viewer">Viewer</option>
+              <option value="editor">Editor</option>
+              <option value="admin">Admin</option>
+            </select>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setRolleModal(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleRolleSpeichern}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg"
+              >
+                Speichern
+              </button>
+            </div>
           </div>
         </div>
       )}
