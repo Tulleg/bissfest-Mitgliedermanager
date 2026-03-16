@@ -10,6 +10,10 @@ Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltun
 
 ---
 
+![](https://github.com/Your_Repository_NameTulleg/bissfest-Mitgliedermanager/bissfest.gif)
+
+---
+
 ## 🎯 Features
 
 - **👥 Mitgliederverwaltung** – Flexible Spalten, vollständig konfigurierbar via `config.json`
@@ -139,27 +143,50 @@ Die `config.json` steuert das gesamte Verhalten der App:
 
 ```json
 {
-  "vereinsname": "Angelverein Musterstadt e.V.",
+  "vereinsname": "Angelverein e.V.",
   "port": 3500,
   "spalten": [
-    { "key": "mitgliedsnummer", "label": "Mitgliedsnr.", "type": "text", "required": true },
-    { "key": "vorname",         "label": "Vorname",      "type": "text", "required": true },
-    { "key": "nachname",        "label": "Nachname",     "type": "text", "required": true },
-    { "key": "geburtsdatum",    "label": "Geburtsdatum", "type": "date", "required": false },
-    { "key": "status",          "label": "Status",       "type": "select",
-      "options": ["aktiv", "passiv", "ausgetreten"],     "required": true }
+    { "key": "nr", "label": "Nr.", "type": "text", "required": false },
+    { "key": "j/e", "label": "J/E", "type": "text", "required": true },
+    { "key": "vorname", "label": "Vorname", "type": "text", "required": true },
+    { "key": "nachname", "label": "Nachname", "type": "text", "required": true },
+    { "key": "geburtsdatum", "label": "Geburtsdatum", "type": "date", "required": false },
+    { "key": "adresse", "label": "Adresse", "type": "text", "required": false },
+    { "key": "alter", "label": "Alter", "type": "text", "required": false, "readonly": true },
+    { "key": "telefon", "label": "Telefon", "type": "text", "required": false },
+    { "key": "email", "label": "E-Mail", "type": "email", "required": false },
+    { "key": "av", "label": "AV", "type": "date", "required": false },
+    { "key": "mitgliedsdauer", "label": "Mitgliedsdauer", "type": "text", "required": false, "readonly": true },
+    { "key": "dav", "label": "DAV", "type": "date", "required": false},
+    { "key": "sonstiges", "label": "Sonstiges", "type": "Text", "required": false}
   ],
+  "terminplan": {
+    "regeln": "Hier die Wettkampfregeln eintragen.",
+    "punkteverteilung": "4 Punkte (1.) | 3 Punkte (2.) | 2 Punkte (3.) | 1 Punkt (4.)",
+    "vorstand": [
+      {
+        "rolle": "1. Vorsitzender",
+        "name": "Max Mustermann",
+        "adresse": "Musterstraße 1, 12345 Musterstadt",
+        "telefon": "01234 / 567890",
+        "email": "max@beispiel.de"
+      }
+    ],
+    "bankdaten": {
+      "name": "Angelverein Muster e.V.",
+      "iban": "DE00000000000000000000",
+      "bic": "BEISPIELXXX"
+    }
+  },
   "exportVorlagen": [
     {
       "name": "Verbandsmeldung",
       "ueberschrift": "Mitgliedermeldung an den Verband",
-      "felder": ["mitgliedsnummer", "vorname", "nachname", "status"],
-      "filter": { "status": "aktiv" },
+      "felder": ["vorname", "nachname", "adresse"],
+      "filter": { "sonstiges": "A" },
       "zeigeAnzahl": true,
       "zeigeDatum": true
-    }
-  ]
-}
+    },
 ```
 
 ### Feldtypen
