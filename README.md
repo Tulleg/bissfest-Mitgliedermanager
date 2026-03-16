@@ -10,7 +10,7 @@ Eine vollständige Verwaltungssoftware für Angelvereine mit Mitgliederverwaltun
 
 ---
 
-![](https://github.com/Your_Repository_NameTulleg/bissfest-Mitgliedermanager/bissfest.gif)
+![](https://github.com/Tulleg/bissfest-Mitgliedermanager/bissfest.gif)
 
 ---
 
